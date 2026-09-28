@@ -1,0 +1,46 @@
+# ============================================================
+#  ComboMCP .gitignore
+#
+#  两条原则：
+#   1. 凡是"每个用户跑一次就不一样"的东西都不进仓库（缓存 / 索引 / 字节码）。
+#   2. 作者本机项目的分析笔记与蓝图夹具也不进仓库——那是私有数据，
+#      不是插件的一部分。
+#
+#  这里刻意用通配符 + 白名单，而不是逐个写中文文件名，避免 .gitignore
+#  自身的编码问题。
+# ============================================================
+
+# ---- 生成物：T3D 缓存 / 索引 / 探针产物 ----
+# 其中含有使用者本机项目的完整蓝图结构，尤其不该公开
+cache/
+
+# ---- 本机项目的分析笔记：只发布 dsh-setup.md ----
+docs/*.md
+!docs/dsh-setup.md
+
+# ---- 蓝图夹具：测试实际只依赖 real_bp_ue57*.t3d ----
+tools/fixtures/*.t3d
+!tools/fixtures/real_bp_ue57.t3d
+!tools/fixtures/real_bp_ue57_default.t3d
+
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+
+# ---- UE 可能在插件目录生成的本地文件 ----
+Binaries/
+Intermediate/
+Saved/
+Config/
+
+# ---- 编辑器 / 操作系统 ----
+.vscode/
+.idea/
+*.swp
+*~
+Thumbs.db
+Desktop.ini
+.DS_Store

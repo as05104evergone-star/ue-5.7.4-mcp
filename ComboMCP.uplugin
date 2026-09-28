@@ -1,0 +1,24 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.0.0",
+	"FriendlyName": "Combo Blueprint MCP",
+	"Description": "ComboMCP: a read-only blueprint and animation asset reader. Exports blueprint graphs, montage timing and AnimBP state machines into offline-parseable T3D caches for external MCP clients (DSH, Claude Desktop, Cursor, ...). Never modifies any asset and needs no compilation.",
+	"Category": "Scripting",
+	"CreatedBy": "",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"EnabledByDefault": true,
+	"CanContainContent": true,
+	"IsBetaVersion": true,
+	"Installed": false,
+	"Modules": [],
+	"Plugins": [
+		{
+			"Name": "PythonScriptPlugin",
+			"Enabled": true
+		}
+	]
+}
