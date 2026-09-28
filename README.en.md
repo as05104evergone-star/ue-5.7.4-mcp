@@ -39,18 +39,44 @@ shipped with every UE 5.x).
 
 ---
 
-## Why it is built this way
+## How it differs from similar projects
 
-After surveying 10 similar projects on GitHub, one trade-off stood out:
+Data read live via `gh api` on 2026-09-28, not estimated:
 
-| | Typical approach (C++ plugin + Node/Python service) | **ComboMCP** |
-|---|---|---|
-| Form | C++ plugin + external service | UE plugin, but `"Modules": []` — **zero C++** |
-| Compilation | Required (VS toolchain) | **None**, pure Python |
-| Install | Node.js or Python + uv | **Nothing** |
-| Project changes | Add plugin entry to `.uproject` | **None**, `EnabledByDefault: true` |
-| Editor closed | Unusable | **Main path still works** (T3D cache) |
-| Graph accuracy | Engine reflection | **Better than reflection** (see "Two data paths") |
+| Project | ★ | Approach | Compilation | Editor must stay open | Can edit assets |
+|---|---|---|---|---|---|
+| [mirno-ehf/ue5-mcp](https://github.com/mirno-ehf/ue5-mcp) | 75 | C++ plugin + local HTTP + MCP wrapper | Yes | Yes (headless fallback) | Yes |
+| [ZiggyMar/unreal-mcp](https://github.com/ZiggyMar/unreal-mcp) | 42 | C++ editor plugin + Node/TS server | Yes | Yes | Yes |
+| [cutehusky/ue5-mcp](https://github.com/cutehusky/ue5-mcp) | 13 | C++ plugin exposing a web API + FastMCP | Yes | Yes | Yes |
+| [Cawb07/ue5-mcp](https://github.com/Cawb07/ue5-mcp) | 1 | C++ | Yes | Yes | Yes |
+| Epic's official Unreal MCP | — | Built into the engine | No | Yes | Yes |
+| **ComboMCP** | — | **Pure Python, `"Modules": []`** | **No** | **No** | **No (deliberately read-only)** |
+
+> Epic's official Unreal MCP only exists from **UE 5.8**. Verified on 5.7.4: there is no
+> MCP-related plugin anywhere in the engine's plugin directory.
+
+### Where this project is the better fit
+
+* **You want to understand and ask questions, not let an AI touch your assets.** Read-only
+  is a deliberate safety boundary, not a missing feature — for "why won't this combo chain
+  continue?", being unable to write removes the risk entirely.
+* **You don't want to install a toolchain.** The alternatives all require compiling a C++
+  plugin with Visual Studio, and most also pull in Node.js or a `pip install`-able
+  dependency such as FastMCP. This plugin has zero compilation and zero third-party deps.
+* **You want to ask questions with the editor closed.** The main read path is a local T3D
+  cache; it behaves identically whether or not the editor is running.
+* **You're on UE 5.7.**
+
+### Where it is the wrong tool
+
+* **You want an AI to edit blueprints.** Use
+  [ZiggyMar/unreal-mcp](https://github.com/ZiggyMar/unreal-mcp) or
+  [mirno-ehf/ue5-mcp](https://github.com/mirno-ehf/ue5-mcp) — they create nodes, wire pins
+  and change defaults. This plugin **cannot** do that and does not intend to.
+* **You need 5.6 or 5.8 coverage.** ZiggyMar targets 5.6/5.8 specifically; this one has
+  only been tested on **5.7.4**.
+* **You want a large tool surface.** ZiggyMar ships 101 tools; this one ships 16
+  (deliberately — tool definitions go into every model request).
 
 The key decision: **Remote Execution is not the main path**. That switch
 (`bRemoteExecution`) defaults to off and has no command-line flag and no console

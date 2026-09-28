@@ -35,18 +35,39 @@ T3D 文本，让模型能回答"为什么连招接不上""这段逻辑到底怎�
 
 ---
 
-## 它为什么这样设计
+## 同类项目与定位差异
 
-调研过 GitHub 上 10 个同类项目后做的取舍：
+数据取于 2026-09-28（`gh api` 实时读取，非估计）：
 
-| | 主流方案（C++ 插件 + Node/Python 服务） | **ComboMCP** |
-|---|---|---|
-| 形态 | C++ 插件 + 外部服务 | UE 插件，但 `"Modules": []`——**不含任何 C++** |
-| 需要编译 | 是（VS 工具链） | **否**，纯 Python |
-| 需要安装 | Node.js 或 Python + uv | **什么都不用装** |
-| 需要改项目 | 往 `.uproject` 加插件声明 | **不用改**，`EnabledByDefault: true` |
-| 编辑器没开时 | 不可用 | **主力路径照常可用**（T3D 缓存） |
-| 读图准确性 | 引擎反射 | **比反射更全**（见下文"两条取数路径"） |
+| 项目 | ★ | 实现方式 | 需编译 | 需编辑器常开 | 能编辑资产 |
+|---|---|---|---|---|---|
+| [mirno-ehf/ue5-mcp](https://github.com/mirno-ehf/ue5-mcp) | 75 | C++ 插件 + 本地 HTTP + MCP wrapper | 是 | 是（关闭时可转无头） | 是 |
+| [ZiggyMar/unreal-mcp](https://github.com/ZiggyMar/unreal-mcp) | 42 | C++ 编辑器插件 + Node/TS 服务 | 是 | 是 | 是 |
+| [cutehusky/ue5-mcp](https://github.com/cutehusky/ue5-mcp) | 13 | C++ 插件暴露 Web API + FastMCP | 是 | 是 | 是 |
+| [Cawb07/ue5-mcp](https://github.com/Cawb07/ue5-mcp) | 1 | C++ | 是 | 是 | 是 |
+| Epic 官方 Unreal MCP | — | 引擎内置 | 否 | 是 | 是 |
+| **ComboMCP** | — | **纯 Python，`"Modules": []`** | **否** | **否** | **否（刻意只读）** |
+
+> Epic 官方的 Unreal MCP 从 **UE 5.8** 起才有。这一点在 5.7.4 上验证过：引擎插件目录里
+> 没有任何 MCP 相关插件。
+
+### 我们更适合什么
+
+* **你只想"读懂 + 答疑"，不想让 AI 碰你的资产。** 只读是刻意的安全边界，不是能力缺失——
+  对"这个连招为什么接不上"这类问题，不可写恰好消除了风险。
+* **你不想装工具链。** 那几个方案都要 Visual Studio 编译 C++ 插件，多半还要 Node.js，
+  或者用 FastMCP 这类需要 `pip install` 的依赖。本插件零编译、零第三方依赖。
+* **你希望编辑器没开时也能问。** 主力读取走本地 T3D 缓存，编辑器开不开都一样。
+* **你在 UE 5.7。**
+
+### 我们不适合什么
+
+* **你想让 AI 直接改蓝图。** 那需要 [ZiggyMar/unreal-mcp](https://github.com/ZiggyMar/unreal-mcp)
+  或 [mirno-ehf/ue5-mcp](https://github.com/mirno-ehf/ue5-mcp)——它们能建节点、连线、改默认值。
+  本插件**没有**这个能力，也不打算有。
+* **你需要覆盖 5.6 或 5.8。** ZiggyMar 明确支持 5.6/5.8；本插件只在 **5.7.4** 上实测过。
+* **你需要大量现成工具。** ZiggyMar 有 101 个工具，本插件 16 个（刻意的：工具定义会进入
+  每一次模型请求）。
 
 关键决策是**不把 Remote Execution 当主路径**：那个开关（`bRemoteExecution`）默认关闭，
 且没有命令行参数、没有 console 命令，只能靠人在编辑器设置里勾。把读取主路径建在一个
