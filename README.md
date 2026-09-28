@@ -365,4 +365,4 @@ Remote Execution（见下条）。
 
 ## 许可
 
-[MIT](LICENSE)
+[MIT](LICENSE) · 版本记录见 [CHANGELOG.md](CHANGELOG.md)

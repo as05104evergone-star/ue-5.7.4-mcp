@@ -390,4 +390,4 @@ modification time later than when the collection started.
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) · See [CHANGELOG.md](CHANGELOG.md) for version history
