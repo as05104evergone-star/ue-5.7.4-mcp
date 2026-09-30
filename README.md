@@ -66,7 +66,7 @@ T3D 文本，让模型能回答"为什么连招接不上""这段逻辑到底怎�
   或 [mirno-ehf/ue5-mcp](https://github.com/mirno-ehf/ue5-mcp)——它们能建节点、连线、改默认值。
   本插件**没有**这个能力，也不打算有。
 * **你需要覆盖 5.6 或 5.8。** ZiggyMar 明确支持 5.6/5.8；本插件只在 **5.7.4** 上实测过。
-* **你需要大量现成工具。** ZiggyMar 有 101 个工具，本插件 16 个（刻意的：工具定义会进入
+* **你需要大量现成工具。** ZiggyMar 有 101 个工具，本插件 17 个（刻意的：工具定义会进入
   每一次模型请求）。
 
 关键决策是**不把 Remote Execution 当主路径**：那个开关（`bRemoteExecution`）默认关闭，
@@ -137,7 +137,7 @@ DeepSeek Harness 用 Cordis 层挂载，见 [`docs/dsh-setup.md`](docs/dsh-setup
 
 ## 用法
 
-### 工具清单（16 个）
+### 工具清单（17 个）
 
 工具面刻意精简：工具定义会进入**每一次**模型请求。
 
@@ -159,6 +159,7 @@ DeepSeek Harness 用 Cordis 层挂载，见 [`docs/dsh-setup.md`](docs/dsh-setup
 | `diagnose` | **连招诊断**：对照蓝图调用点与动画时序给出问题清单 |
 | `audit` | 节点判活分析（需要真实连线，默认走 T3D） |
 | `reflect` | 兜底：直接看引擎反射暴露了什么 |
+| `pie_state` | **运行时状态**：读正在跑的 PIE 世界（需编辑器在 Play） |
 
 ### 推荐读取顺序（由粗到细，避免一次拉爆上下文）
 
@@ -200,6 +201,37 @@ if (!InProp->HasAnyPropertyFlags(CPF_Edit | CPF_BlueprintVisible | CPF_Blueprint
 （`Property.cpp`），所以裸 `UPROPERTY()` 的成员在 T3D 里照样出现。
 
 **所以 T3D 不是退而求其次，它是能力更强的那条路。**
+
+### 静态读取的边界：`pie_state`
+
+`ue/` 下其余模块读的都是**磁盘上的资产**（T3D 缓存）或**编辑器世界**。有一类问题它们
+永远答不了：**图连对了、审计也干净，运行起来却不对。**
+
+这不是假设出来的场景。本工具的由来就是一个真实 case：某角色的装备武器链路——
+查表、生成 Actor、`AttachToComponent` 全都接对，蓝图编译无错，`audit` 也查不出问题，
+但按装备键武器就是不动。静态读取无法区分**"连对了但没执行"**和**"连线本身错了"**，
+而这两者的修法完全相反。
+
+`pie_state` 补的就是这一段。它连进正在运行的 PIE 世界，读**只有运行时才存在的事实**：
+
+| 读什么 | 为什么这是关键 |
+|---|---|
+| 武器 Actor 当前挂载的插槽名 | 判断"在手上还是背上"的**唯一**可靠依据 |
+| 战斗组件的运行时变量 | `CurrentWeapon` / 装备行 / 防连点标志的**真实值**，不是默认值 |
+| 骨架插槽是否存在 | 插槽不存在会让 `AttachToComponent` **静默退化到 mesh 根节点**——蓝图里完全看不出来 |
+| Mesh 当前在播哪个 montage | 区分"蒙太奇没播"和"播了但回调没来" |
+| `verdict` | 把上面的事实压成"最可能是什么问题"，省得自己推 |
+
+三条使用约定：
+
+* **需要编辑器正在 Play。** 没有 PIE 时返回 `pie_running: false` 并给出提示——
+  这是正常状态，不是错误。
+* **跑在运行时，不是编译期。** 蓝图改了**没保存**也能读到最新行为（读的是内存里的类）。
+* **只读。** 不改运行时状态、不调函数、不 spawn。和其余模块同一条安全边界。
+
+关于防连点标志的一个实战技巧：**按完键别急着重置**。卡住的状态本身就有信息量——
+`bWeaponBusy` 停在 `true` 说明那次操作的**回调根本没触发**（正常路径会在回调里把它复位），
+这一条就能把问题域从"插槽/动画"直接切到"回调/事件链"。
 
 ### T3D 路径的三个格式陷阱（实测所得）
 
@@ -248,6 +280,7 @@ Plugins/ComboMCP/
 │   ├── runtime.py          防御性反射读取
 │   ├── t3d_read.py         T3D 导出与读取（UE 侧）
 │   ├── domain.py           连招领域诊断规则
+│   ├── pie_state.py        PIE 运行时状态读取（唯一需要 game world 的模块）
 │   └── dispatch.py         命令分发 + 自动择路
 ├── engine/                 MCP 侧（普通 Python 进程）
 │   ├── offline.py          离线读取：缓存命中时的全部实现
@@ -269,11 +302,12 @@ Plugins/ComboMCP/
 |---|---|---|
 | `test_t3d.py`（60 项） | ✅ | 解析器单测，用合成样本 |
 | `test_t3d_real.py`（54 项） | ✅ | 真实引擎导出回归，夹具随仓库提供 |
-| `test_wiring.py`（44 项） | ✅ | 模块装载 + 命令表接线 |
-| `mcp_protocol_test.py`（20 项） | ✅ | MCP 协议端到端 |
+| `test_wiring.py`（46 项） | ✅ | 模块装载 + 命令表接线 |
+| `mcp_protocol_test.py`（25 项） | ✅ | MCP 协议端到端 |
 | `probe_plugin_load.py` | ✅ | 插件验收：是否被引擎计入启用列表、菜单 API 是否可用 |
 | `probe_remote.py` | ✅ | Remote Execution 通道探测 |
 | `inspect_macro.py` | ✅ | 读任意引擎宏的内部实现（判断宏有无副作用） |
+| `call_tool.py` | ✅ | 直接调工具层（`python tools/call_tool.py pie_state`），绕开 Windows 命令行吃 JSON 引号的问题 |
 | `inspect_var_refs.py` | ⚠️ | 默认资产是作者项目的，传参即可用于任何资产 |
 | `dump_combo_graph.py` | ⚠️ | 同上 |
 | `test_e2e_offline.py`（23 项） | ⚠️ | 资产列表是作者项目的，需先 `sync` 过同名资产才能跑；否则会失败 |
@@ -283,7 +317,7 @@ Plugins/ComboMCP/
 
 ## 测试与验证
 
-**不需要编辑器**（共 201 项断言）：
+**不需要编辑器**（共 185 项断言）：
 
 ```powershell
 $py = "<引擎>\Engine\Binaries\ThirdParty\Python3\Win64\python.exe"
@@ -291,8 +325,8 @@ $root = "<项目>\Plugins\ComboMCP"
 
 & $py "$root\tools\test_t3d.py"           # 60 项
 & $py "$root\tools\test_t3d_real.py"      # 54 项
-& $py "$root\tools\test_wiring.py"        # 44 项
-& $py "$root\tools\mcp_protocol_test.py"  # 20 项
+& $py "$root\tools\test_wiring.py"        # 46 项
+& $py "$root\tools\mcp_protocol_test.py"  # 25 项
 ```
 
 **需要引擎、但不需要编辑器在运行**（插件验收）：

@@ -1,9 +1,9 @@
 {
 	"FileVersion": 3,
-	"Version": 1,
-	"VersionName": "1.0.0",
+	"Version": 2,
+	"VersionName": "1.1.0",
 	"FriendlyName": "Combo Blueprint MCP",
-	"Description": "ComboMCP: a read-only blueprint and animation asset reader. Exports blueprint graphs, montage timing and AnimBP state machines into offline-parseable T3D caches for external MCP clients (DSH, Claude Desktop, Cursor, ...). Never modifies any asset and needs no compilation.",
+	"Description": "ComboMCP: a read-only blueprint, animation and PIE-runtime reader. Exports blueprint graphs, montage timing and AnimBP state machines into offline-parseable T3D caches for external MCP clients (DSH, Claude Desktop, Cursor, ...), and can read live Play-In-Editor state (weapon attachment socket, component variables, active montage). Never modifies any asset and needs no compilation.",
 	"Category": "Scripting",
 	"CreatedBy": "",
 	"CreatedByURL": "",

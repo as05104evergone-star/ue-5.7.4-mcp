@@ -123,13 +123,13 @@ def main():
         response = client.recv("tools/list")
         tools = (response.get("result") or {}).get("tools") or []
         check("返回工具列表", len(tools) > 0, "count=%d" % len(tools))
-        check("工具数量 == 16", len(tools) == 16, "count=%d" % len(tools))
+        check("工具数量 == 17", len(tools) == 17, "count=%d" % len(tools))
 
         names = [t.get("name") for t in tools]
         expected = {"status", "sync", "project_map", "search", "find_refs", "index",
                     "class_summary", "graph_overview", "flow", "node_detail",
                     "montage", "anim_asset", "anim_calls", "diagnose",
-                    "audit", "reflect"}
+                    "audit", "reflect", "pie_state"}
         check("工具名集合正确", set(names) == expected,
               "missing=%s extra=%s" % (sorted(expected - set(names)),
                                        sorted(set(names) - expected)))
@@ -140,8 +140,13 @@ def main():
         else:
             check("每个工具都有 description 与 inputSchema", True)
 
-        # ---- 4. tools/call -> status（编辑器未连接，应是结构化错误）
-        print("\n[4] tools/call: status（编辑器未连接时应优雅报错）")
+        # ---- 4. tools/call -> status（两种环境都必须返回结构正确的 payload）
+        #
+        # 注意：这里**不能**断言 isError。status 的结果取决于编辑器是否在线——
+        # 作者机器上编辑器常开着，CI/别人机器上通常没开。原来写死 isError==True，
+        # 于是"编辑器连着"这种更健康的情况下反而报失败。断言应该只约束
+        # "无论在线与否，payload 结构都得对"。
+        print("\n[4] tools/call: status（结构必须合法，与编辑器是否在线无关）")
         request_id = client.send("tools/call",
                                  {"name": "status", "arguments": {}})
         response = client.recv("tools/call status")
@@ -153,12 +158,25 @@ def main():
         payload = {}
         try:
             payload = json.loads(content[0].get("text") or "{}")
+            check("content 是合法 JSON", True)
         except Exception as exc:
             check("content 是合法 JSON", False, str(exc))
-        check("标记 isError", result.get("isError") is True)
-        check("错误信息指向编辑器通道",
-              "_bridge" in payload or "editor" in json.dumps(payload).lower(),
-              json.dumps(payload, ensure_ascii=False)[:200])
+
+        check("payload 是对象", isinstance(payload, dict), repr(payload)[:120])
+        # 无论在线与否，这三块都必须在：它们不依赖编辑器
+        check("含 bridge 段", "bridge" in payload, sorted(payload.keys())[:12])
+        check("含 index 段", "index" in payload, sorted(payload.keys())[:12])
+        check("含 t3d_cache 段", "t3d_cache" in payload, sorted(payload.keys())[:12])
+        # 在线：有引擎信息且不算错误；离线：有 error 且带 isError
+        if payload.get("error"):
+            check("离线时标记 isError", result.get("isError") is True)
+            check("离线时给出编辑器通道提示",
+                  "_bridge" in payload or "editor" in json.dumps(payload).lower(),
+                  json.dumps(payload, ensure_ascii=False)[:200])
+        else:
+            check("在线时报告引擎版本", bool(payload.get("engine_version")),
+                  json.dumps(payload, ensure_ascii=False)[:200])
+            check("在线时不算 isError", result.get("isError") is not True)
 
         # ---- 5. tools/call -> index status（纯本地，应成功）
         print("\n[5] tools/call: index(action=status)（不依赖编辑器）")

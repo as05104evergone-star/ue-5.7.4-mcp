@@ -202,9 +202,13 @@ def main():
     # ---------------------------------------------------------- 5. 工具层
     print("\n[5] 工具层")
     listed = tool_layer.list_tools()
-    check("列出 16 个工具", len(listed) == 16, "got %d" % len(listed))
+    # 工具定义会进入每一次模型请求，所以数量本身是被刻意约束的——加工具时必须改这里，
+    # 强制作者重新想一遍"这个工具值得占用每次请求的 token 吗"。
+    check("列出 17 个工具", len(listed) == 17, "got %d" % len(listed))
     names = [t["name"] for t in listed]
     check("工具名无重复", len(names) == len(set(names)), str(names))
+    # 运行时读取工具必须存在：它是 ue/ 下唯一需要 game world 的能力
+    check("含运行时读取工具 pie_state", "pie_state" in names, str(names))
     for tool in listed:
         if "_handler" in tool:
             check("工具定义不含内部 handler", False, tool["name"])

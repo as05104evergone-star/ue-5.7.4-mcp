@@ -26,7 +26,7 @@ if ROOT not in sys.path:
 from mcpserver import tools as tool_layer  # noqa: E402
 
 SERVER_NAME = "combomcp"
-SERVER_VERSION = "1.0.0"
+SERVER_VERSION = "1.1.0"
 
 # 支持的协议版本，新的在前
 SUPPORTED_PROTOCOLS = ("2025-06-18", "2025-03-26", "2024-11-05")

@@ -3,7 +3,7 @@ r"""
 ComboMCP / 工具层
 =================
 
-工具面刻意保持精简（15 个）。原因很实际：工具定义会进入**每一次**模型请求，
+工具面刻意保持精简（17 个）。原因很实际：工具定义会进入**每一次**模型请求，
 一个 100 工具的服务在模型还没读到你的问题之前就已经花掉几万 token。
 
 读取按**由粗到细**分层，模型可以先看摘要再决定要不要展开：
@@ -436,6 +436,19 @@ def t_reflect(params):
     })
 
 
+def t_pie_state(params):
+    """PIE 运行时状态：静态读取答不了的那一类问题。
+
+    典型用途：蓝图连对了、审计也干净，但运行起来不对——需要看运行时的真实值
+    （组件变量、武器当前挂在哪个插槽、mesh 在播哪个 montage）。
+    """
+    return _call("pie_state", {
+        "component_path": params.get("component_path"),
+        "actor_name": params.get("actor_name"),
+        "include_sockets": bool(params.get("include_sockets", True)),
+    })
+
+
 # ====================================================================== 工具定义
 
 
@@ -718,6 +731,38 @@ _TOOLS = [
             "required": ["asset_path", "graph_name", "node_index"],
         },
         "handler": t_reflect,
+    },
+    {
+        "name": "pie_state",
+        "description": (
+            "读取正在运行的 PIE（Play In Editor）世界的运行时状态——静态资产读取答不了的"
+            "那一类问题。返回玩家 Pawn、战斗组件的状态变量（武器变量 / 装备行 / 防连点标志）、"
+            "武器 Actor 当前挂在哪个插槽（这是判断「在手上还是背上」的唯一可靠依据）、"
+            "mesh 在播哪个 montage、以及骨架插槽是否存在。"
+            "末尾的 verdict 字段给出最可能的问题方向。"
+            "需要编辑器正在 Play；没有 PIE 时返回 pie_running=false（这不是错误）。"
+            "只读，不改任何运行时状态。"),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "component_path": {
+                    "type": "string",
+                    "description": "战斗组件类路径，如 /Game/Combo_Demo/Component/AC_Combat。"
+                                   "省略则按类名模糊匹配（含 combat 或以 ac_ 开头）。",
+                },
+                "actor_name": {
+                    "type": "string",
+                    "description": "指定要看的 Pawn 名。省略则用玩家 0 的 Pawn。",
+                },
+                "include_sockets": {
+                    "type": "boolean",
+                    "description": "是否检查骨架插槽存在性（默认 true）。"
+                                   "插槽不存在会让 attach 静默退化到 mesh 根节点。",
+                },
+            },
+            "required": [],
+        },
+        "handler": t_pie_state,
     },
 ]
 

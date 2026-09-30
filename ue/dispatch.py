@@ -13,6 +13,7 @@ from . import anim_read
 from . import bp_read
 from . import domain
 from . import index
+from . import pie_state
 from . import runtime as rt
 from . import t3d_read
 
@@ -202,6 +203,9 @@ COMMANDS = {
     "extract_animation_calls": domain.extract_animation_calls,
     "audit_blueprint_logic": audit_auto,
     "analyze_combo_system": domain.analyze_combo_system,
+
+    # PIE 运行时（唯一需要 game world 的命令；没有 PIE 时返回 pie_running=false）
+    "pie_state": pie_state.pie_state,
 }
 
 

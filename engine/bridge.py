@@ -64,6 +64,7 @@ MODULE_ORDER = (
     "index",        # 资产枚举与蓝图索引
     "t3d_read",     # T3D 路径的蓝图读取（依赖 runtime/graph_ir/t3d）
     "domain",       # 连招领域诊断
+    "pie_state",    # PIE 运行时状态读取（唯一需要 game world 的模块）
     "dispatch",     # 命令分发
 )
 
