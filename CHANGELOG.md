@@ -137,5 +137,6 @@
 3. `MemberParent` 是**完整对象路径**（`"/Script/CoreUObject.Class'/Script/Engine.Actor'"`），
    直接取会得到 `Class` 而不是 `Actor`。
 
+[1.2.0]: https://github.com/as05104evergone-star/ue-5.7.4-mcp/releases/tag/v1.2.0
 [1.1.0]: https://github.com/as05104evergone-star/ue-5.7.4-mcp/releases/tag/v1.1.0
 [1.0.0]: https://github.com/as05104evergone-star/ue-5.7.4-mcp/releases/tag/v1.0.0
