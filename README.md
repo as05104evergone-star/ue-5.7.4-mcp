@@ -66,7 +66,7 @@ T3D 文本，让模型能回答"为什么连招接不上""这段逻辑到底怎�
   或 [mirno-ehf/ue5-mcp](https://github.com/mirno-ehf/ue5-mcp)——它们能建节点、连线、改默认值。
   本插件**没有**这个能力，也不打算有。
 * **你需要覆盖 5.6 或 5.8。** ZiggyMar 明确支持 5.6/5.8；本插件只在 **5.7.4** 上实测过。
-* **你需要大量现成工具。** ZiggyMar 有 101 个工具，本插件 17 个（刻意的：工具定义会进入
+* **你需要大量现成工具。** ZiggyMar 有 101 个工具，本插件 21 个（刻意的：工具定义会进入
   每一次模型请求）。
 
 关键决策是**不把 Remote Execution 当主路径**：那个开关（`bRemoteExecution`）默认关闭，
@@ -137,7 +137,7 @@ DeepSeek Harness 用 Cordis 层挂载，见 [`docs/dsh-setup.md`](docs/dsh-setup
 
 ## 用法
 
-### 工具清单（17 个）
+### 工具清单（21 个，其中 4 个需要可选的 KBaseUE）
 
 工具面刻意精简：工具定义会进入**每一次**模型请求。
 
@@ -160,6 +160,22 @@ DeepSeek Harness 用 Cordis 层挂载，见 [`docs/dsh-setup.md`](docs/dsh-setup
 | `audit` | 节点判活分析（需要真实连线，默认走 T3D） |
 | `reflect` | 兜底：直接看引擎反射暴露了什么 |
 | `pie_state` | **运行时状态**：读正在跑的 PIE 世界（需编辑器在 Play） |
+
+#### 可选：知识库四件套（需要同级的 `KBaseUE` 插件）
+
+这 4 个工具回答的是**"这条 UE 语义到底是不是这样"，并要求 `file:line` 证据**。
+它们依赖兄弟目录 `Plugins/KBaseUE`（**不在本仓库里**）。
+
+| 工具 | 用途 |
+|---|---|
+| `engine_source` | UE 5.7 全源码索引：`symbol` / `read` / `usage` / `reflected` / `grep` / `files` / `status` |
+| `ue_docs` | Epic 官方 5.7 文档镜像：`status` / `search` / `read` / `version_check` |
+| `engine_facts` | 蒸馏的高频坑规则，每条带源码行号 |
+| `interface_check` | 具体蓝图接口资产上验证：这个函数会做成**事件**还是**函数图** |
+
+**没有 KBaseUE 时它们会返回 `{"error": "KBaseUE module not found", ...}`——**
+那是**降级，不是崩溃**，其余 17 个工具照常工作，协议层不受影响
+（`tools/mcp_protocol_test.py` 第 9 节专门验证这一点）。
 
 ### 推荐读取顺序（由粗到细，避免一次拉爆上下文）
 
@@ -292,6 +308,8 @@ Plugins/ComboMCP/
 │   ├── server.py           JSON-RPC over stdio
 │   └── tools.py            工具定义与实现
 ├── tools/                  测试与诊断脚本（见下表）
+├── skills/                 给 agent 用的技能包（SKILL.md，非 MCP 必需）
+│   └── ue57-knowledge-base/  知识库四件套的使用契约：先取 file:line 再下结论
 ├── cache/                  生成物：T3D 缓存（**不入库**，可随时删）
 └── docs/
 ```
@@ -303,11 +321,13 @@ Plugins/ComboMCP/
 | `test_t3d.py`（60 项） | ✅ | 解析器单测，用合成样本 |
 | `test_t3d_real.py`（54 项） | ✅ | 真实引擎导出回归，夹具随仓库提供 |
 | `test_wiring.py`（46 项） | ✅ | 模块装载 + 命令表接线 |
-| `mcp_protocol_test.py`（25 项） | ✅ | MCP 协议端到端 |
+| `mcp_protocol_test.py`（41 项） | ✅ | MCP 协议端到端。含 stdio 编码回归（**故意不设** `PYTHONIOENCODING`）与"可选依赖缺失时降级"两节 |
+| `mcp_probe.py` | ✅ | 绕开 MCP 客户端直接走 stdio 协议，拿原始响应与 `error.data` 里的 traceback。客户端只给一句 `internal error` 时用它 |
 | `probe_plugin_load.py` | ✅ | 插件验收：是否被引擎计入启用列表、菜单 API 是否可用 |
 | `probe_remote.py` | ✅ | Remote Execution 通道探测 |
 | `inspect_macro.py` | ✅ | 读任意引擎宏的内部实现（判断宏有无副作用） |
 | `call_tool.py` | ✅ | 直接调工具层（`python tools/call_tool.py pie_state`），绕开 Windows 命令行吃 JSON 引号的问题 |
+| `pie_key.py` | ⚠️ | 只打印 `pie_state` 的几个关键字段，便于 PIE 中快速轮询；组件路径是作者项目的，改一行即可 |
 | `inspect_var_refs.py` | ⚠️ | 默认资产是作者项目的，传参即可用于任何资产 |
 | `dump_combo_graph.py` | ⚠️ | 同上 |
 | `test_e2e_offline.py`（23 项） | ⚠️ | 资产列表是作者项目的，需先 `sync` 过同名资产才能跑；否则会失败 |
@@ -317,7 +337,7 @@ Plugins/ComboMCP/
 
 ## 测试与验证
 
-**不需要编辑器**（共 185 项断言）：
+**不需要编辑器**（共 201 项断言）：
 
 ```powershell
 $py = "<引擎>\Engine\Binaries\ThirdParty\Python3\Win64\python.exe"
@@ -326,7 +346,7 @@ $root = "<项目>\Plugins\ComboMCP"
 & $py "$root\tools\test_t3d.py"           # 60 项
 & $py "$root\tools\test_t3d_real.py"      # 54 项
 & $py "$root\tools\test_wiring.py"        # 46 项
-& $py "$root\tools\mcp_protocol_test.py"  # 25 项
+& $py "$root\tools\mcp_protocol_test.py"  # 41 项
 ```
 
 **需要引擎、但不需要编辑器在运行**（插件验收）：

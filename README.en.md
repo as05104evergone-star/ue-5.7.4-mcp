@@ -1,4 +1,4 @@
-# ComboMCP
+﻿# ComboMCP
 
 **Read Unreal Engine blueprints and animation assets into compact text an AI can actually reason about.**
 
@@ -75,7 +75,7 @@ Data read live via `gh api` on 2026-09-28, not estimated:
   and change defaults. This plugin **cannot** do that and does not intend to.
 * **You need 5.6 or 5.8 coverage.** ZiggyMar targets 5.6/5.8 specifically; this one has
   only been tested on **5.7.4**.
-* **You want a large tool surface.** ZiggyMar ships 101 tools; this one ships 16
+* **You want a large tool surface.** ZiggyMar ships 101 tools; this one ships 21
   (deliberately — tool definitions go into every model request).
 
 The key decision: **Remote Execution is not the main path**. That switch
@@ -151,7 +151,7 @@ For DeepSeek Harness, mounting goes through the Cordis layer — see
 
 ## Usage
 
-### Tools (16)
+### Tools (21, four of which need the optional KBaseUE)
 
 The tool surface is deliberately small: tool definitions go into **every** model request.
 
@@ -173,6 +173,23 @@ The tool surface is deliberately small: tool definitions go into **every** model
 | `diagnose` | **Combo diagnosis**: cross-checks blueprint call sites against animation timing |
 | `audit` | Node liveness analysis (needs real links; uses T3D by default) |
 | `reflect` | Fallback: see what engine reflection actually exposes |
+| `pie_state` | **Runtime state**: read the live PIE world (editor must be playing) |
+
+#### Optional: the knowledge-base four (requires a sibling `KBaseUE` plugin)
+
+These answer **"is this UE semantic actually true?", with a `file:line` to back it up.**
+They depend on `Plugins/KBaseUE`, which is **not part of this repository**.
+
+| Tool | Purpose |
+|---|---|
+| `engine_source` | Index of the whole UE 5.7 source: `symbol` / `read` / `usage` / `reflected` / `grep` / `files` / `status` |
+| `ue_docs` | Mirror of Epic's official 5.7 docs: `status` / `search` / `read` / `version_check` |
+| `engine_facts` | Distilled high-frequency traps, each with source line numbers |
+| `interface_check` | On a real interface asset: does this function become an **event** or a **function graph**? |
+
+**Without KBaseUE they return `{"error": "KBaseUE module not found", ...}` — that is
+degradation, not a crash.** The other 17 core tools keep working and the protocol layer is
+unaffected (`tools/mcp_protocol_test.py` section 9 verifies exactly this).
 
 ### Recommended read order (coarse to fine)
 

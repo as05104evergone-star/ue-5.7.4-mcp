@@ -449,6 +449,206 @@ def t_pie_state(params):
     })
 
 
+# ============================================== KBaseUE：引擎事实 + 可执行校验
+#
+# 这两个工具来自 Plugins/KBaseUE 插件。存在的理由很具体：曾经在同一个问题上连续
+# 给出错误结论（把「接口函数为什么变成函数而不是事件」归因到同名图、归因到"编辑
+# 器没有转事件的路径"），根因是只读了引擎源码的一处、没有交叉验证。所以：
+#   * engine_facts  —— 引擎语义的蒸馏答案，每条带 file:line，并附"上次错在哪"
+#   * interface_check —— 把答案落到具体资产上验证，带缓存新鲜度与读全性自检
+# 凡是准备断言蓝图/事件/接口语义之前，先查这两个。
+
+
+_MODULE_CACHE = {}
+
+
+def _kbase_module(name):
+    """按路径加载 KBaseUE 的 Python 模块（它们不在 sys.path 里）。
+
+    **按文件 mtime 失效缓存。** 原先只查 ``sys.modules``，模块一旦加载就永不重载
+    ——改完 ``docs_mirror.py`` 必须**重启整个会话**才生效，而这些文件在开发中是
+    经常改的。实测就踩过：修好 ``read`` 的片段匹配后，通过工具调用仍然走旧代码，
+    表现得像"修复没生效"。
+
+    代价是每次调用多一次 ``getmtime``，收益是"改完立刻生效"。
+    """
+    import importlib.util
+
+    # __file__ = <project>/Plugins/ComboMCP/mcpserver/tools.py
+    mcpserver_dir = os.path.dirname(os.path.abspath(__file__))
+    combo_dir = os.path.dirname(mcpserver_dir)              # <project>/Plugins/ComboMCP
+    plugins_dir = os.path.dirname(combo_dir)                # <project>/Plugins
+    py_dir = os.path.join(plugins_dir, "KBaseUE", "Content", "Python")
+    mod_path = os.path.join(py_dir, name + ".py")
+    if not os.path.isfile(mod_path):
+        return None, {"error": "KBaseUE module not found", "looked_in": mod_path}
+
+    if py_dir not in sys.path:
+        sys.path.insert(0, py_dir)
+
+    key = "kbaseue_" + name
+    try:
+        mtime = os.path.getmtime(mod_path)
+    except OSError:
+        mtime = None
+    cached = _MODULE_CACHE.get(key)
+    if cached and cached[0] == mtime and key in sys.modules:
+        return sys.modules[key], None
+
+    spec = importlib.util.spec_from_file_location(key, mod_path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[key] = module
+    try:
+        spec.loader.exec_module(module)
+    except Exception:
+        # 加载失败就把半成品从 sys.modules 拿走。留着它的话，之后每次调用拿到的
+        # 都是一个没有函数的残缺模块，报错变成 "AttributeError: no attribute ..."，
+        # 完全看不出真正的原因是"上一次加载就失败了"。
+        sys.modules.pop(key, None)
+        _MODULE_CACHE.pop(key, None)
+        raise
+    _MODULE_CACHE[key] = (mtime, module)
+    return module, None
+
+
+def _kbase():
+    kb, err = _kbase_module("kbase")
+    if err:
+        return None, err
+    _, err = _kbase_module("iface_check")
+    return kb, err
+
+
+def t_engine_source(params):
+    """查 UE 5.7 引擎源码索引（本地 SQLite，毫秒级）。
+
+    这是防"凭记忆下结论"的机制：任何关于蓝图/UE 语义的断言，先来这里拿到
+    file:line，再说话。
+    """
+    mod, err = _kbase_module("engine_query")
+    if err:
+        return err
+
+    action = (params.get("action") or "status").lower()
+    idx = params.get("index_path")
+    try:
+        if action == "status":
+            return mod.status(idx)
+        if action == "symbol":
+            if not params.get("name"):
+                return {"error": "name is required for action=symbol"}
+            return mod.symbol(params["name"], params.get("kind"),
+                              int(params.get("limit", 40)), idx)
+        if action == "read":
+            if not params.get("name"):
+                return {"error": "name is required for action=read"}
+            return mod.read_definition(params["name"], params.get("kind"),
+                                       max_lines=int(params.get("max_lines", 120)),
+                                       path=idx)
+        if action == "usage":
+            if not params.get("name"):
+                return {"error": "name is required for action=usage"}
+            return mod.usage(params["name"], int(params.get("limit", 40)), idx)
+        if action == "reflected":
+            return mod.reflected(params.get("name"), params.get("specifier"),
+                                 params.get("kind"), int(params.get("limit", 40)), idx)
+        if action == "grep":
+            if not params.get("pattern"):
+                return {"error": "pattern is required for action=grep"}
+            return mod.grep(params["pattern"], params.get("keyword"),
+                            int(params.get("limit", 60)), idx)
+        if action == "files":
+            if not params.get("pattern"):
+                return {"error": "pattern is required for action=files"}
+            return mod.file_index(params["pattern"], int(params.get("limit", 40)), idx)
+        return {"error": "unknown action: %s" % action,
+                "valid": ["status", "symbol", "read", "usage", "reflected",
+                          "grep", "files"]}
+    except FileNotFoundError as exc:
+        return {"error": str(exc),
+                "hint": "索引还没建。命令行跑： python engine_index.py --build"}
+
+
+def t_ue_docs(params):
+    """查 Epic 官方文档的本地镜像。
+
+    与 engine_source 的分工：源码索引给**事实**（在哪、第几行、什么说明符），
+    文档给**意图与工作流**（Epic 打算怎么用、有什么限制）。两边都查过再下结论。
+    """
+    mod, err = _kbase_module("docs_mirror")
+    if err:
+        return err
+
+    action = (params.get("action") or "status").lower()
+    try:
+        if action == "status":
+            return mod.status()
+        if action == "search":
+            if not params.get("query"):
+                return {"error": "query is required for action=search"}
+            return mod.search(params["query"], int(params.get("limit", 8)))
+        if action == "read":
+            if not params.get("name"):
+                return {"error": "name (path fragment) is required for action=read"}
+            return mod.read_page(params["name"], int(params.get("max_lines", 200)))
+        if action == "version_check":
+            return mod.version_check()
+        return {"error": "unknown action: %s" % action,
+                "valid": ["status", "search", "read", "version_check"],
+                "note": "抓取用命令行： check.cmd --docs crawl"}
+    except Exception as exc:
+        return {"error": "%s: %s" % (type(exc).__name__, exc)}
+
+
+
+
+def t_engine_facts(params):
+    """查引擎语义的蒸馏结论（带源码行号）。"""
+    kb, err = _kbase()
+    if err:
+        return err
+
+    if params.get("list_topics"):
+        return {"topics": kb.topics(), "meta": kb.meta()}
+
+    query = params.get("query")
+    if not query:
+        rule = kb.get_rule(params.get("id")) if params.get("id") else None
+        if rule is None:
+            return {"error": "query or id is required", "topics": kb.topics()}
+        return {"rule": rule}
+
+    hits = kb.search(query, limit=int(params.get("limit", 3)),
+                     full=bool(params.get("full", False)))
+    if not hits:
+        return {"query": query, "hits": [],
+                "note": "知识库里没有匹配的规则。不要凭印象补一个因果解释；"
+                        "要么去读引擎源码，要么明说不知道。",
+                "topics": [t["title"] for t in kb.topics()]}
+    return {"query": query, "hits": hits,
+            "note": "这些结论都带引擎源码行号，可复核。"}
+
+
+def t_interface_check(params):
+    """把「接口函数会做成事件还是函数」落到具体资产上验证。"""
+    kb, err = _kbase()
+    if err:
+        return err
+    checker = sys.modules["kbaseue_iface_check"]
+
+    path = params.get("asset_path")
+    if not path:
+        return {"error": "asset_path is required",
+                "example": "/Game/Combo_Demo/BP/Interfaces/BPI_CombatComponent"}
+
+    result = checker.analyze_interface(path, cache_dir=params.get("cache_dir"))
+    if params.get("collect") and (result.get("error")
+                                  or result.get("trustworthy") is not True):
+        result["collect"] = checker.collect([path], cache_dir=params.get("cache_dir"))
+        result = checker.analyze_interface(path, cache_dir=params.get("cache_dir"))
+    return result
+
+
 # ====================================================================== 工具定义
 
 
@@ -763,6 +963,109 @@ _TOOLS = [
             "required": [],
         },
         "handler": t_pie_state,
+    },
+    {
+        "name": "engine_facts",
+        "description": (
+            "【断言蓝图/事件/接口语义之前先查这个】UE 5.7.4 引擎语义蒸馏结论，"
+            "每条都带引擎源码 file:line 可复核，并附「常见的错误归因」。"
+            "query 传关键词（中文即可，如 '接口 函数 为什么不是事件'、"
+            "'AnimNotifyState 每帧'、'移除接口'）。"
+            "list_topics=true 只列目录（省 token）。"
+            "命中不了就说明知识库没这条——此时不要凭印象编一个因果解释。"),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "关键词，中文或英文"},
+                "id": {"type": "string", "description": "直接取某条规则的完整内容"},
+                "list_topics": {"type": "boolean", "description": "只列目录"},
+                "limit": {"type": "integer", "description": "返回条数，默认 3"},
+                "full": {"type": "boolean",
+                         "description": "连源码行号与「上次错在哪」一起返回"},
+            },
+        },
+        "handler": t_engine_facts,
+    },
+    {
+        "name": "interface_check",
+        "description": (
+            "验证一个蓝图接口里每个函数在实现时会做成**事件（菱形）还是函数图（f）**，"
+            "并指出是哪个参数卡住了。判定复刻引擎的 FunctionCanBePlacedAsEvent = "
+            "!HasFunctionAnyOutputParameter()，事实来自 T3D 缓存（只读，不需要编辑器）。"
+            "返回里 trustworthy=false 表示结论不可信（缓存比资产旧、或签名没读全），"
+            "**这种情况绝不能拿来当依据**；加 collect=true 可以自动重收集。"),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "asset_path": {"type": "string",
+                               "description": "接口资产路径，如 "
+                                              "/Game/Combo_Demo/BP/Interfaces/BPI_CombatComponent"},
+                "collect": {"type": "boolean",
+                            "description": "缓存缺失或过期时自动跑一次 headless 收集"},
+                "cache_dir": {"type": "string", "description": "覆盖 T3D 缓存目录"},
+            },
+            "required": ["asset_path"],
+        },
+        "handler": t_interface_check,
+    },
+    {
+        "name": "engine_source",
+        "description": (
+            "【关于 UE 语义要下断言之前，先在这里拿到 file:line】UE 5.7 全部引擎源码的"
+            "本地 SQLite 索引（约 4 万文件 / 457MB，毫秒级查询，不需要编辑器）。"
+            "action 可选："
+            "symbol=按名字定位类/函数声明；"
+            "read=读声明原文（带行号，**下结论前应读原文**）；"
+            "usage=看引擎里实际怎么用这个名字（说明符含义的正解是看真实用法，不是查字典）；"
+            "reflected=查 UPROPERTY/UFUNCTION 及其说明符（Python/蓝图可见性的真相）；"
+            "grep=关键字全球定位；files=按路径片段找文件；status=索引状态。"
+            "读不到时会明确说读不到——不要据此断言引擎不支持某特性。"),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string",
+                           "enum": ["status", "symbol", "read", "usage",
+                                    "reflected", "grep", "files"]},
+                "name": {"type": "string",
+                         "description": "符号名，如 FunctionCanBePlacedAsEvent / UAnimNotifyState"},
+                "pattern": {"type": "string",
+                            "description": "grep 的内容或 files 的路径片段"},
+                "keyword": {"type": "string", "description": "grep 时限定关键字"},
+                "specifier": {"type": "string",
+                              "description": "reflected 时按说明符过滤，如 BlueprintReadWrite"},
+                "kind": {"type": "string",
+                         "description": "class / func（symbol、read）或 UPROPERTY / UFUNCTION（reflected）"},
+                "limit": {"type": "integer", "description": "返回条数上限"},
+                "max_lines": {"type": "integer", "description": "read 时读取行数"},
+                "index_path": {"type": "string", "description": "覆盖索引文件路径"},
+            },
+            "required": ["action"],
+        },
+        "handler": t_engine_source,
+    },
+    {
+        "name": "ue_docs",
+        "description": (
+            "查 Epic 官方 UE 5.7 文档的本地镜像（约 4 万页，命令行抓取）。"
+            "与 engine_source 分工：源码索引给**事实**（在哪、第几行、什么说明符），"
+            "文档给**意图与工作流**（Epic 怎么设计、有什么限制）。"
+            "action=search 传关键词找页并返回命中片段；"
+            "action=read 传路径片段读全文；action=status 看镜像规模；"
+            "action=version_check 核对已抓页面是否真的都是 5.7"
+            "（版本不符的内容不可当成 5.7 用）。"
+            "两边都查过再下断言。"),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string",
+                           "enum": ["status", "search", "read", "version_check"]},
+                "query": {"type": "string", "description": "search 的关键词"},
+                "name": {"type": "string", "description": "read 的页面路径片段"},
+                "limit": {"type": "integer", "description": "返回条数上限"},
+            },
+            "required": ["action"],
+        },
+        "handler": t_ue_docs,
     },
 ]
 

@@ -202,10 +202,21 @@ def main():
     # ---------------------------------------------------------- 5. 工具层
     print("\n[5] 工具层")
     listed = tool_layer.list_tools()
-    # 工具定义会进入每一次模型请求，所以数量本身是被刻意约束的——加工具时必须改这里，
-    # 强制作者重新想一遍"这个工具值得占用每次请求的 token 吗"。
-    check("列出 17 个工具", len(listed) == 17, "got %d" % len(listed))
     names = [t["name"] for t in listed]
+
+    # 这里**故意不再断言精确数量**。
+    #
+    # 原先写的是 `len(listed) == 17`，理由是"加工具时必须改这里，强迫作者重新想一遍
+    # 这个工具值不值得占用每次请求的 token"。想法没错，但代价是这个数字被复制到了
+    # 四个地方（本文件、mcp_protocol_test.py、README.md、README.en.md），
+    # 于是**每次加工具都会有人漏改**——实测已经误报三次，其中一次让这个测试
+    # 长期处于"失败但没人看"的状态，正好错过了真正的编码 bug。
+    #
+    # 职责分开：**精确清单契约归 mcp_protocol_test.py**（它按环境区分核心 17 个与
+    # 可选 4 个），本文件只管"接线对不对"。把"至少不能少"和"每个工具结构合法"
+    # 留在这里，保护力度不变，漂移源头消失。
+    check("工具数量不少于核心的 17 个", len(listed) >= 17, "got %d" % len(listed))
+    print("      当前共 %d 个工具" % len(listed))
     check("工具名无重复", len(names) == len(set(names)), str(names))
     # 运行时读取工具必须存在：它是 ue/ 下唯一需要 game world 的能力
     check("含运行时读取工具 pie_state", "pie_state" in names, str(names))

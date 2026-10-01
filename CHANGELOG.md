@@ -2,6 +2,64 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.2.0] — 2026-10-02
+
+从"读蓝图"扩到"**读引擎事实**"：新增 4 个知识库工具，并修掉三个会让工具
+**安静地给错结果**的缺陷。
+
+### 新增
+
+- **知识库四件套（第 18–21 个 MCP 工具）**，依赖兄弟目录 `Plugins/KBaseUE`
+  （**不在本仓库**）：
+  - `engine_source`：UE 5.7 全源码索引（28,574 文件 / 726,540 符号）。
+    七个动作：`symbol` / `read` / `usage` / `reflected` / `grep` / `files` / `status`。
+    用途是**下结论之前先拿到 `file:line`**。
+  - `ue_docs`：Epic 官方 5.7 文档镜像（3,468 页 / 索引 63.7 MB）。
+  - `engine_facts`：蒸馏的高频坑规则，每条带源码行号。中文查询可用。
+  - `interface_check`：在**具体接口资产**上判定函数会做成事件还是函数图，
+    并指出是哪个参数卡住的。
+- **`skills/ue57-knowledge-base/`**：给 agent 用的技能包。它把"先取证据再下结论"
+  写成**硬规则**，并记录了三次说错话的具体内容与病根。
+- **`tools/mcp_probe.py`**：绕开 MCP 客户端直接驱动 stdio 协议，拿原始响应和
+  `error.data` 里的 traceback。客户端只回一句 `internal error` 时的唯一出路。
+
+### 修复
+
+- **stdio 编码：MCP 服务器进程继承系统代码页（中文机器是 GBK）**，产生三个
+  看起来互不相关的症状：中文查询 0 命中、中文输出乱码、
+  **`interface_check` 直接 `-32603 internal error`**（结果里有一个 GBK 编不出的
+  字符时 `sys.stdout.write` 抛异常，整条响应消失，而 traceback 只留在服务器的
+  `error.data` 里）。
+  修法：进程启动时把三个标准流自己钉成 UTF-8，**不依赖环境变量**——环境变量
+  决定行为的东西，迟早会在别人机器上出问题。`_emit` 另加兜底：写不出去就退回
+  ASCII 转义，一个字符不该让整个回答消失。
+- **KBaseUE 模块按 mtime 热重载。** 原先只查 `sys.modules`，模块一旦加载就永不
+  重载，改完 `docs_mirror.py` 必须重启整个会话。加载失败时会把半成品从
+  `sys.modules` 移除，否则后续调用只报 `AttributeError`，看不出真正原因是
+  "上次加载就失败了"。
+- **工具数量写死导致的假失败（第三次复发）。** 这个数字被复制在四处
+  （`test_wiring.py`、`mcp_protocol_test.py`、`README.md`、`README.en.md`），
+  每次加工具都有人漏改；上一轮它让 `mcp_protocol_test.py` 长期处于"失败但没人看"
+  的状态，**正好错过了真正的编码 bug**。现在职责分开：精确清单契约归
+  `mcp_protocol_test.py`（按环境区分核心 17 与可选 4），`test_wiring.py` 只断言
+  "不少于核心 17"。
+
+### 兼容性
+
+- **4 个新工具依赖可选的 `KBaseUE`。** 没有它时它们返回
+  `{"error": "KBaseUE module not found", ...}`——**降级，不是崩溃**，其余 17 个
+  工具与协议层不受影响。`mcp_protocol_test.py` 第 9 节专门验证这一点，
+  所以本仓库在**没有** KBaseUE 的环境下测试仍然全绿。
+- 注意区分两件事：这 4 个工具是**静态注册**的——`tools/list` 永远返回 21 个，
+  KBaseUE 在不在都一样；它只决定调用时给结果还是给结构化错误。
+  第一版把"是否有 KBaseUE"也算进了期望的工具数，于是**在新克隆的仓库里必然失败**
+  （21 ≠ 17）。问题不是靠读代码发现的，是靠**真的克隆一份到临时目录跑测试**发现的。
+
+### 测试
+
+201 项断言（`test_t3d` 60 / `test_t3d_real` 54 / `test_wiring` 46 /
+`mcp_protocol_test` 41），全绿。
+
 ## [1.1.0] — 2026-09-30
 
 补上静态读取够不到的那一层：**运行时**。

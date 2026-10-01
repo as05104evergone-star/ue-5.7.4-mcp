@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
 r"""
 ComboMCP / MCP stdio 服务器
 ===========================
@@ -18,6 +18,25 @@ import os
 import sys
 import traceback
 
+# MCP 的 stdio 传输**必须**是 UTF-8，而 Python 在 Windows 上默认按系统代码页
+# （中文机器是 GBK）打开 stdin/stdout。于是：
+#
+#   * 进来的中文查询按 GBK 解码 → 变成乱码 → 知识库检索 0 命中；
+#   * 出去的中文按 GBK 编码 → 客户端按 UTF-8 读 → 界面上一片乱码；
+#   * 结果里只要有一个 GBK 编不出的字符，`sys.stdout.write` 就抛
+#     UnicodeEncodeError，**整个响应变成 -32603 internal error**。
+#
+# 实测：同一个 interface_check 调用，设 PYTHONIOENCODING=utf-8 时正常返回 2936 字符，
+# 不设时直接 -32603。这不是"偶发"，是环境变量决定行为——所以不能靠环境变量，
+# 必须在进程里自己钉死。
+for _stream, _errors in ((sys.stdin, "replace"),
+                         (sys.stdout, "replace"),
+                         (sys.stderr, "replace")):
+    try:
+        _stream.reconfigure(encoding="utf-8", errors=_errors)
+    except Exception:
+        pass
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 if ROOT not in sys.path:
@@ -26,7 +45,7 @@ if ROOT not in sys.path:
 from mcpserver import tools as tool_layer  # noqa: E402
 
 SERVER_NAME = "combomcp"
-SERVER_VERSION = "1.1.0"
+SERVER_VERSION = "1.2.0"
 
 # 支持的协议版本，新的在前
 SUPPORTED_PROTOCOLS = ("2025-06-18", "2025-03-26", "2024-11-05")
@@ -115,8 +134,20 @@ def _emit(message):
             "id": message.get("id"),
             "error": {"code": -32603, "message": "result not serializable: %s" % exc},
         })
-    sys.stdout.write(line + "\n")
-    sys.stdout.flush()
+    try:
+        sys.stdout.write(line + "\n")
+        sys.stdout.flush()
+    except Exception:
+        # 最后一道保险。**一个字符编不出来，不该让整个回答消失**——
+        # 实测就是这里：结果里有一个当前编码表示不了的字符，write 抛异常，
+        # 一路冒到 serve_stdio，客户端只看到"internal error"，什么问题都查不出。
+        # 退回纯 ASCII 转义：中文变成 \uXXXX，但内容一个字都不少。
+        try:
+            sys.stdout.write(
+                json.dumps(message, ensure_ascii=True, default=str) + "\n")
+            sys.stdout.flush()
+        except Exception:
+            _log("failed to emit a response at all (id=%s)" % message.get("id"))
 
 
 def _log(message):
