@@ -10,8 +10,10 @@ ComboMCP / UE 内命令分发
 import traceback
 
 from . import anim_read
+from . import asset_read
 from . import bp_read
 from . import domain
+from . import editor_actions
 from . import index
 from . import pie_state
 from . import runtime as rt
@@ -118,6 +120,41 @@ def audit_auto(asset_path, graph_name=None, source="auto"):
     return result
 
 
+# ====================================================================== 编辑器动作
+
+
+def editor_action(action, args=None):
+    """编辑器动作（PIE / 关卡 / Actor）。写操作需要授权。
+
+    这是 ``ue/`` 下**唯一会改状态**的入口，所以它在两处被挡：
+
+    * MCP 侧（``engine``）先做策略门，只有放行时才把 ``_actions_allowed``
+      透传到这里；
+    * 这里再过一遍 :func:`ue.editor_actions._guard_write`。
+
+    故意做成两道：Remote Execution 通道是开放的，任何人都能把命令送进来，
+    所以不能只靠外部那一层。
+    """
+    return editor_actions.editor_action(action, args or {})
+
+
+def asset_detail(asset_path, max_props=60):
+    """编辑器侧的资产摘要（编辑器开着且缓存未命中时走这条）。
+
+    与 MCP 侧的离线实现共用同一份 ``ue/asset_read.py``——它不依赖 unreal，
+    所以两边结果一致，不会出现"编辑器里读得出、离线读不出"的分裂。
+    """
+    diag = rt.Diagnostics()
+    text, info = t3d_read.export_t3d(asset_path)
+    if text is None:
+        return rt.fail("T3D 导出失败: %s" % info.get("error"), diag)
+    result = asset_read.summarize(text, asset_path=asset_path,
+                                 max_props=int(max_props))
+    result["source"] = "t3d"
+    result["export_info"] = {k: v for k, v in info.items() if k != "attempts"}
+    return result
+
+
 # ====================================================================== 环境
 
 
@@ -197,6 +234,12 @@ COMMANDS = {
     "sequence_detail": anim_read.sequence_detail,
     "animblueprint_detail": anim_read.animblueprint_detail,
     "generic_asset_detail": anim_read.generic_asset_detail,
+
+    # 任意资产的语义摘要（材质/贴图/网格/关卡…）
+    "asset_detail": asset_detail,
+
+    # 编辑器动作：PIE / 关卡 / Actor。写操作在两层被授权门挡住。
+    "editor_action": editor_action,
 
     # 领域诊断
     "montage_timeline_analysis": domain.montage_timeline_analysis,

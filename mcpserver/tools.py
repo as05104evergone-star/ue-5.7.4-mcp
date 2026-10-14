@@ -21,7 +21,9 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from engine import collector as collector_mod      # noqa: E402
-from engine import offline                        # noqa: E402
+from engine import actions as actions_mod           # noqa: E402
+from engine import logs as logs_mod                 # noqa: E402
+from engine import offline                          # noqa: E402
 from engine import search as index_search           # noqa: E402
 from engine.bridge import UEBridge, BridgeError     # noqa: E402
 
@@ -115,6 +117,8 @@ def _offline_for(command, args):
             return offline.anim_blueprint(asset, full=bool(args.get("full")))
         if command == "generic_asset_detail":
             return offline.generic_asset(asset)
+        if command == "asset_detail":
+            return offline.asset_summary(asset, max_props=int(args.get("max_props", 60)))
     except Exception as exc:
         return {"error": "offline %s failed: %s: %s"
                          % (command, type(exc).__name__, exc),
@@ -133,6 +137,7 @@ def t_status(params):
     except Exception as exc:
         out["bridge_error"] = str(exc)
     out["index"] = index_search.index_status()
+    out["write_policy"] = actions_mod.describe()
     cached = offline.list_cached()
     out["t3d_cache"] = {
         "count": len(cached),
@@ -143,6 +148,16 @@ def t_status(params):
                  "而 T3D 里这些数据是完整的。缓存存在时工具直接走本地解析，"
                  "不需要编辑器在线。用 sync 收集更多资产。"),
     }
+    try:
+        files = logs_mod.available()
+        out["logs"] = {
+            "dir": logs_mod.logs_dir(),
+            "files": len(files),
+            "newest": files[0]["file"] if files else None,
+            "hint": "用 editor action=logs 读；不需要编辑器在运行。",
+        }
+    except Exception as exc:
+        out["logs_error"] = str(exc)
     if "error" in out:
         out["hint"] = ("编辑器没有响应——但只要有 T3D 缓存，图逻辑与 Montage "
                        "时序仍然可读。用 sync 收集，然后照常提问。")
@@ -166,11 +181,18 @@ def t_sync(params):
         assets = [a["path"] for a in discovered.get("assets") or []]
         if not assets:
             return {"error": "在 %s 下没发现可收集的资产" % scope,
-                    "discovered_total": discovered.get("total")}
+                    "discovered_total": discovered.get("total"),
+                    "via": discovered.get("via"),
+                    "note": ("没给 classes 时列的是全部资产；"
+                             "若这里仍为空，通常是 Content 目录下确实没有资产。")}
 
     result = collector_mod.collect(assets, force=force)
     if discovered is not None:
         result["discovered_total"] = discovered.get("total")
+        result["discovered_via"] = discovered.get("via")
+        if discovered.get("via") == "filesystem_walk":
+            result["discovery_note"] = (
+                "资产注册表为空（新建项目常见），已改为扫 Content 目录发现资产。")
     if "error" not in result:
         cached = offline.list_cached()
         result["cache_count"] = len(cached)
@@ -449,6 +471,203 @@ def t_pie_state(params):
     })
 
 
+# ============================================== 任意资产：统一读取入口
+#
+# 这是"读取范围不止于蓝图与动画"的落点。T3D 导出对资产类型没有限制，
+# 所以只要有缓存，材质/贴图/网格/关卡/数据表都能读——而且有语义摘要器，
+# 不是倒一张属性表（见 ue/asset_read.py）。
+
+
+def t_asset(params):
+    """读任意资产：按类自动选摘要器。"""
+    path = params.get("asset_path")
+    if not path:
+        return {"error": "asset_path is required",
+                "example": "/Game/YourContent/Materials/M_Base"}
+
+    max_props = int(params.get("max_props", 60))
+
+    # 缓存命中就走离线：毫秒级、不需要编辑器，且与编辑器侧共用同一份摘要器
+    if offline.has_cache(path):
+        return offline.asset_summary(path, max_props=max_props)
+
+    result = _call("asset_detail", {"asset_path": path, "max_props": max_props})
+    if _bridge_failed(result):
+        return {
+            "error": "没有 %s 的 T3D 缓存，编辑器也不在线。" % path,
+            "_cache_miss": True,
+            "how": "先调用 sync 把这个资产（或它所在的 scope）采集下来。",
+        }
+    return result
+
+
+# ============================================== 基础操作答疑
+
+
+_HELP_PATH = os.path.join(ROOT, "docs", "quickstart.md")
+_HELP_CACHE = {"mtime": None, "sections": None, "order": None}
+
+# 关键词 -> topic。用中文和英文都认，因为用户会混着说。
+_HELP_ALIASES = {
+    "install": ("安装", "装", "接入", "配置", "setup", "mcp", "客户端"),
+    "menu": ("菜单", "入口", "tools", "找不到"),
+    "sync": ("采集", "缓存", "收集", "导出", "cache", "刷新"),
+    "pie": ("运行", "播放", "play", "模拟", "simulate", "运行时"),
+    "level": ("关卡", "地图", "map", "子关卡", "level"),
+    "logs": ("日志", "报错", "log", "output"),
+    "remoteexec": ("远程执行", "通道", "连不上", "引擎", "版本", "5.6", "5.7"),
+    "actions": ("写操作", "权限", "安全", "开关", "授权", "能不能改", "只读"),
+    "readorder": ("读什么", "先读", "工具", "清单", "asset", "顺序"),
+    "troubleshoot": ("排查", "没生效", "读不到", "空", "不对"),
+}
+
+
+def _load_help():
+    """读取并切分手册。按 mtime 失效缓存，改完文档立刻生效。"""
+    try:
+        mtime = os.path.getmtime(_HELP_PATH)
+    except OSError:
+        return None, {"error": "手册文件不存在", "looked_for": _HELP_PATH}
+
+    if _HELP_CACHE["mtime"] == mtime and _HELP_CACHE["sections"] is not None:
+        return _HELP_CACHE, None
+
+    with open(_HELP_PATH, "r", encoding="utf-8") as handle:
+        text = handle.read()
+
+    sections, order, title = {}, [], None
+    for line in text.splitlines():
+        if line.startswith("## "):
+            title = line[3:].strip()
+            if title == "topic 与别名的对应":
+                title = None
+                continue
+            sections[title] = []
+            order.append(title)
+        elif title and not line.startswith("# "):
+            sections[title].append(line)
+
+    _HELP_CACHE.update({
+        "mtime": mtime,
+        "sections": dict((k, "\n".join(v).strip()) for k, v in sections.items()),
+        "order": order,
+    })
+    return _HELP_CACHE, None
+
+
+def _match_topic(query, sections):
+    """把一句自然语言（中英混合）落到 topic 上。"""
+    if query in sections:
+        return query
+    low = (query or "").lower()
+    if not low:
+        return None
+    for topic, words in _HELP_ALIASES.items():
+        if topic not in sections:
+            continue
+        for word in words:
+            if word.lower() in low:
+                return topic
+    # 退一步：topic 名本身作为子串
+    for topic in sections:
+        if topic.lower() in low:
+            return topic
+    return None
+
+
+def t_help(params):
+    """基础操作答疑：返回手册里的对应小节。
+
+    刻意不调模型、不联网——手册就是 Markdown 文件，按 topic 取。
+    这样"怎么装插件""菜单在哪""怎么开 PIE"这类问题不消耗任何外部依赖。
+    """
+    data, err = _load_help()
+    if err:
+        return err
+
+    sections, order = data["sections"], data["order"]
+    topic = params.get("topic")
+    query = params.get("query")
+
+    if not topic and not query:
+        return {
+            "topics": order,
+            "usage": "传 topic，或传一句 query（中英混合都能匹配）。",
+            "example": {"query": "怎么打开 PIE"},
+        }
+
+    resolved = _match_topic(topic or query, sections)
+    if resolved is None:
+        return {
+            "error": "没有匹配到帮助主题：%s" % (topic or query),
+            "topics": order,
+            "hint": "也可以直接 view=all 取整份手册。",
+        }
+
+    if (params.get("view") or "").lower() == "all":
+        return {"topic": resolved, "topics": order,
+                "markdown": sections[resolved]}
+    return {"topic": resolved, "markdown": sections[resolved],
+            "other_topics": [t for t in order if t != resolved]}
+
+
+# ============================================== 编辑器动作（PIE / 关卡 / 日志）
+#
+# 写操作默认关闭，策略在 engine/actions.py（MCP 侧）与 ue/editor_actions.py
+# （编辑器侧）各有一道。日志是纯本地文件读取，不需要编辑器。
+
+
+def t_editor(params):
+    """编辑器动作：capabilities / pie / level / actor / logs。"""
+    action = (params.get("action") or "").lower()
+    sub = params.get("sub")
+
+    if not action:
+        return {"error": "action is required",
+                "valid": ["capabilities", "pie", "level", "actor", "logs"],
+                "note": "pie/level/actor 需要编辑器在运行；logs 不需要。"}
+
+    # ---- 日志：本地文件，不走编辑器
+    if action == "logs":
+        return logs_mod.read(
+            tail=int(params.get("tail", 200)),
+            pattern=params.get("pattern"),
+            severity=params.get("severity", "all"),
+            file=params.get("file"),
+            grep_category=params.get("category"),
+        )
+
+    if action == "logs_list":
+        return {"files": logs_mod.available(), "dir": logs_mod.logs_dir()}
+
+    # ---- 编辑器动作：先过策略门
+    write_actions = ("pie.start", "pie.stop", "pie.simulate",
+                     "level.load", "level.new", "level.save", "level.add")
+    is_write = ("%s.%s" % (action, sub)) in write_actions if sub else False
+    allowed, blocked = actions_mod.check(is_write,
+                                         confirm=bool(params.get("confirm")))
+    if not allowed:
+        return blocked
+
+    payload = {
+        "action": action,
+        "sub": sub,
+        "asset_path": params.get("asset_path") or params.get("level_path"),
+        "is_partitioned_world": bool(params.get("is_partitioned_world", False)),
+        "filter": params.get("filter"),
+        "limit": int(params.get("limit", 200)),
+        # 授权已经在上面的策略门里判过；这一位是给编辑器侧第二道门看的
+        "_actions_allowed": True,
+    }
+    return _call("editor_action", payload)
+
+
+def t_help_topics():
+    """供工具自描述的 topic 列表（失败时给空）。"""
+    data, _err = _load_help()
+    return data["order"] if data else []
+
+
 # ============================================== KBaseUE：引擎事实 + 可执行校验
 #
 # 这两个工具来自 Plugins/KBaseUE 插件。存在的理由很具体：曾经在同一个问题上连续
@@ -666,7 +885,9 @@ _TOOLS = [
         "description": (
             "把资产导出成 T3D 落到本地缓存（走 headless commandlet，"
             "**不需要编辑器开着 Remote Execution**）。"
-            "给 assets 列表直接收集；或给 scope 让我先发现该范围内的蓝图/动画资产。"
+            "给 assets 列表直接收集；或给 scope 让我先发现该范围内的资产——"
+            "**不传 classes 就是全部资产**（材质/贴图/网格/关卡都包含），"
+            "要缩小范围就传 classes，如 [\"Blueprint\", \"Material\"]。"
             "已缓存的默认跳过，force=true 才重导。"
             "收集后所有读取类工具都走本地缓存，毫秒级返回。"
             "注意：每次调用要加载一次项目（首次约 1 分钟，之后约 10 秒），"
@@ -679,7 +900,8 @@ _TOOLS = [
                 "scope": {"type": "string",
                           "description": "没给 assets 时，先在这个目录下发现资产"},
                 "classes": {"type": "array", "items": {"type": "string"},
-                            "description": "发现的资产类过滤，默认蓝图与动画类"},
+                            "description": "资产类过滤；**省略即全部**。"
+                                           "例：[\"Blueprint\", \"Material\", \"Texture2D\"]"},
                 "limit": {"type": "integer", "description": "发现上限，默认 400"},
                 "force": {"type": "boolean", "description": "强制重导，默认 false"},
             },
@@ -963,6 +1185,102 @@ _TOOLS = [
             "required": [],
         },
         "handler": t_pie_state,
+    },
+    {
+        "name": "asset",
+        "description": (
+            "【读任意资产的统一入口】按资产类自动选摘要器，不再只限于蓝图与动画。"
+            "材质：混合/着色模型 + 每个输入是常量还是连着哪个表达式 + 声明的参数；"
+            "材质实例：父材质 + 参数覆盖；贴图：尺寸/格式/压缩/sRGB/LODGroup；"
+            "静态网格：材质槽 + 包围盒 + 碰撞预设；骨骼网格：骨架 + 材质槽；"
+            "关卡：已加载关卡 + World Partition；AnimMontage/AnimBlueprint 会自动转"
+            "专用读取器。其它任何类退到通用视图（属性 + 子对象构成）。"
+            "**蓝图**走的是通用视图，它不含图逻辑——读蓝图请用 class_summary → "
+            "graph_overview → flow。"
+            "有 T3D 缓存就走本地解析（毫秒级，不需要编辑器）。"
+            "读不到的东西会明说：网格顶点、贴图像素、关卡里 Actor 的逐个序列化。"),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "asset_path": {"type": "string",
+                               "description": "UE 对象路径，如 "
+                                              "/Game/YourContent/Materials/M_Base"},
+                "max_props": {"type": "integer",
+                              "description": "通用视图最多列多少属性，默认 60"},
+            },
+            "required": ["asset_path"],
+        },
+        "handler": t_asset,
+    },
+    {
+        "name": "help",
+        "description": (
+            "【基础操作答疑】不传参数先看有哪些主题；传 topic 或一句 query "
+            "（中英混合都能匹配，例如 '怎么装插件'、'怎么打开 PIE'、'日志怎么看'）"
+            "取回对应的操作手册。主题包括：install / menu / sync / pie / level / "
+            "logs / remoteexec / actions / readorder / troubleshoot。"
+            "内容来自本地 docs/quickstart.md，不联网、不调模型。"),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "topic": {"type": "string", "description": "主题名"},
+                "query": {"type": "string",
+                          "description": "自然语言问题，会自动落到某个主题"},
+                "view": {"type": "string", "enum": ["all"],
+                         "description": "保留位；主题内容本身就是完整小节"},
+            },
+        },
+        "handler": t_help,
+    },
+    {
+        "name": "editor",
+        "description": (
+            "【编辑器动作】action=capabilities 先看这台编辑器能做什么；"
+            "action=pie（sub=start/stop/simulate/status）控制 PIE；"
+            "action=level（sub=current/list/load/new/save/add）关卡操作；"
+            "action=actor（sub=list/selected）看关卡里/选中的 Actor；"
+            "action=logs（tail/pattern/severity/file）读日志。"
+            "**写操作默认关闭**：pie 的 start/stop/simulate 与 level 的 "
+            "load/new/save/add 需要 COMBO_ALLOW_ACTIONS=1 或本次传 confirm=true，"
+            "否则返回带 _actions_blocked 的说明。"
+            "logs 读的是磁盘上的 <项目>/Saved/Logs/*.log，不需要编辑器在运行；"
+            "pie/level/actor 需要编辑器开着并且打开了 Remote Execution"
+            "（该开关默认关闭，见 help topic=remoteexec）。"
+            "不执行任意 console 命令，也不保存任意资产。"),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string",
+                           "enum": ["capabilities", "pie", "level", "actor",
+                                    "logs", "logs_list"]},
+                "sub": {"type": "string",
+                        "description": "pie: start/stop/simulate/status；"
+                                       "level: current/list/load/new/save/add；"
+                                       "actor: list/selected"},
+                "asset_path": {"type": "string",
+                               "description": "level sub=load/new/add 的目标关卡，"
+                                              "如 /Game/Maps/MyMap"},
+                "is_partitioned_world": {"type": "boolean",
+                                         "description": "level sub=new 时是否建"
+                                                        " World Partition 关卡"},
+                "filter": {"type": "string",
+                           "description": "actor sub=list 的名字/类名过滤"},
+                "tail": {"type": "integer", "description": "logs：取最后 N 行，默认 200"},
+                "pattern": {"type": "string", "description": "logs：正则过滤"},
+                "severity": {"type": "string",
+                             "enum": ["all", "error", "warning"],
+                             "description": "logs：级别过滤，默认 all"},
+                "file": {"type": "string",
+                         "description": "logs：指定日志文件名，省略则取最新的"},
+                "category": {"type": "string",
+                             "description": "logs：按日志类别过滤，如 LogPython"},
+                "limit": {"type": "integer", "description": "actor 返回条数上限"},
+                "confirm": {"type": "boolean",
+                            "description": "单次授权写操作（等价于临时打开开关）"},
+            },
+            "required": ["action"],
+        },
+        "handler": t_editor,
     },
     {
         "name": "engine_facts",

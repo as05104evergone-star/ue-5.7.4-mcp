@@ -1,9 +1,9 @@
-﻿{
+{
 	"FileVersion": 3,
-	"Version": 3,
-	"VersionName": "1.2.0",
+	"Version": 4,
+	"VersionName": "1.3.0",
 	"FriendlyName": "Combo Blueprint MCP",
-	"Description": "ComboMCP: a read-only blueprint, animation and PIE-runtime reader. Exports blueprint graphs, montage timing and AnimBP state machines into offline-parseable T3D caches for external MCP clients (DSH, Claude Desktop, Cursor, ...), and can read live Play-In-Editor state (weapon attachment socket, component variables, active montage). Never modifies any asset and needs no compilation.",
+	"Description": "ComboMCP: reads Unreal assets, animations and PIE runtime state into offline-parseable T3D caches for external MCP clients (DSH, Claude Desktop, Cursor, ...). Covers blueprints AND materials, material instances, textures, static/skeletal meshes and levels; exports blueprint graphs, montage timing and AnimBP state machines; can drive PIE play, level load/new/save and read editor logs (write actions are opt-in via COMBO_ALLOW_ACTIONS=1). Verified on UE 5.6.1 and 5.7.4. Needs no compilation.",
 	"Category": "Scripting",
 	"CreatedBy": "",
 	"CreatedByURL": "",

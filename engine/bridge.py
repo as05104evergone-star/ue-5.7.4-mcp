@@ -28,6 +28,7 @@ import hashlib
 import importlib.util
 import json
 import os
+import re
 import sys
 import time
 
@@ -39,15 +40,25 @@ CACHE_DIR = os.path.join(ROOT, "cache")
 # 结果超过此字节数就落盘，只回传路径
 INLINE_LIMIT = 300_000
 
-# 引擎定位候选（顺序即优先级）
+# 引擎定位候选（顺序即优先级）。
+#
+# 注意最后两组的形状差异：Epic Launcher 装在 ``<盘>:\UE_5.6``，而有些机器
+# （包括本项目实测的那台）装在 ``E:\UE_5.6\UE_5.6``——多一层同名目录。
+# 两种都列，否则 5.6 机器上会找不到引擎。
 ENGINE_CANDIDATES = [
     r"E:\UE_5.7",
     r"D:\UE_5.7",
     r"C:\Program Files\Epic Games\UE_5.7",
+    r"E:\UE_5.6",
+    r"D:\UE_5.6",
+    r"C:\Program Files\Epic Games\UE_5.6",
     r"E:\UE_5.6\UE_5.6",
     r"D:\UE_5.6\UE_5.6",
-    r"C:\Program Files\Epic Games\UE_5.6",
 ]
+
+# 无脑扫这几个盘的根，找 UE_x.y（含再套一层同名目录的布局）
+_SCAN_ROOTS = ("E:/", "D:/", "C:/")
+_RE_ENGINE_DIR = re.compile(r"^UE_(\d+)\.(\d+)$")
 
 REMOTE_EXEC_REL = os.path.join(
     "Engine", "Plugins", "Experimental", "PythonScriptPlugin",
@@ -58,12 +69,14 @@ REMOTE_EXEC_REL = os.path.join(
 MODULE_ORDER = (
     "graph_ir",     # 纯数据：IR 定义 + 执行流遍历 + DSL 渲染（无依赖）
     "t3d",          # 纯数据：T3D 文本 -> IR（依赖 graph_ir）
+    "asset_read",   # 纯数据：任意资产的语义摘要（依赖 t3d）
     "runtime",      # UE 反射的防御性包装
     "bp_read",      # 反射路径的蓝图读取
     "anim_read",    # 动画资产读取
     "index",        # 资产枚举与蓝图索引
     "t3d_read",     # T3D 路径的蓝图读取（依赖 runtime/graph_ir/t3d）
     "domain",       # 连招领域诊断
+    "editor_actions",  # 编辑器动作（PIE/关卡/日志）—— 只在编辑器里，见该模块注释
     "pie_state",    # PIE 运行时状态读取（唯一需要 game world 的模块）
     "dispatch",     # 命令分发
 )
@@ -72,23 +85,119 @@ MODULE_ORDER = (
 # ====================================================================== 引擎定位
 
 
+def engine_ok(root):
+    """这个目录是不是一个可用的引擎根（remote_execution.py 在不在）。"""
+    return bool(root) and os.path.isfile(os.path.join(root, REMOTE_EXEC_REL))
+
+
+def _assoc_engine_dirs(assoc):
+    """把 ``EngineAssociation``（如 ``5.6``）展开成若干候选目录。"""
+    out = []
+    for root in _SCAN_ROOTS:
+        base = os.path.join(root, "UE_%s" % assoc)
+        out.append(base)
+        out.append(os.path.join(base, "UE_%s" % assoc))   # 多一层同名目录的布局
+    out.append(os.path.join(r"C:\Program Files\Epic Games", "UE_%s" % assoc))
+    return out
+
+
+def _scan_engine_dirs():
+    """扫盘找 ``UE_x.y`` 目录。只在候选表与 EngineAssociation 都落空时才跑。"""
+    found = []
+    for root in _SCAN_ROOTS:
+        if not os.path.isdir(root):
+            continue
+        try:
+            names = os.listdir(root)
+        except OSError:
+            continue
+        for name in names:
+            if not _RE_ENGINE_DIR.match(name):
+                continue
+            base = os.path.join(root, name)
+            found.append(base)
+            nested = os.path.join(base, name)
+            if os.path.isdir(nested):
+                found.append(nested)
+    return found
+
+
+def project_engine_association():
+    """读 ``.uproject`` 里的 ``EngineAssociation``。
+
+    这是"这个项目该用哪个引擎"的权威答案——比在候选表里猜版本可靠得多。
+    返回 ``None`` 表示文件读不到或没有该字段（源码构建的项目会是空串）。
+    """
+    path = project_file_path()
+    if not path:
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
+    except Exception:
+        return None
+    assoc = data.get("EngineAssociation")
+    if isinstance(assoc, str) and assoc.strip():
+        return assoc.strip()
+    return None
+
+
+def project_file_path():
+    """定位本项目根下的 ``.uproject``（找不到返回 None）。"""
+    try:
+        project_root = os.path.dirname(os.path.dirname(ROOT))
+        for name in sorted(os.listdir(project_root)):
+            if name.endswith(".uproject"):
+                return os.path.join(project_root, name)
+    except Exception:
+        pass
+    return None
+
+
 def find_engine(explicit=None):
-    """定位引擎根目录。"""
+    """定位引擎根目录。
+
+    解析顺序（**项目优先**）：
+
+    1. ``explicit`` —— 调用方显式指定；
+    2. 本项目 ``.uproject`` 的 ``EngineAssociation`` —— 这是关键的一条：
+       插件装在 5.6 项目里就应该用 5.6，装在 5.7 项目里就用 5.7，
+       不需要人去设环境变量。原先没有这一条，候选表里 5.7 恒排第一，
+       于是 5.6 项目会被悄悄喂给 5.7 的导出器；
+    3. ``COMBO_UE_ENGINE`` 环境变量 —— 显式覆盖；
+    4. 常见安装位置候选表；
+    5. 扫盘找 ``UE_x.y``（最慢，只在前面都失败时跑）。
+
+    全程只依赖 ``remote_execution.py`` 是否存在来判定"这是个可用引擎根"，
+    因为那正是 :class:`UEBridge` 需要的东西。
+    """
     if explicit:
-        if os.path.isfile(os.path.join(explicit, REMOTE_EXEC_REL)):
+        if engine_ok(explicit):
             return explicit
         raise RuntimeError("engine root has no remote_execution.py: %s" % explicit)
 
+    assoc = project_engine_association()
+    if assoc:
+        for candidate in _assoc_engine_dirs(assoc):
+            if engine_ok(candidate):
+                return candidate
+
     env = os.environ.get("COMBO_UE_ENGINE")
-    if env and os.path.isfile(os.path.join(env, REMOTE_EXEC_REL)):
+    if engine_ok(env):
         return env
 
     for candidate in ENGINE_CANDIDATES:
-        if os.path.isfile(os.path.join(candidate, REMOTE_EXEC_REL)):
+        if engine_ok(candidate):
             return candidate
+
+    for candidate in _scan_engine_dirs():
+        if engine_ok(candidate):
+            return candidate
+
     raise RuntimeError(
         "找不到 Unreal Engine。请设置环境变量 COMBO_UE_ENGINE 指向引擎根目录，"
-        "例如 E:\\UE_5.7")
+        "例如 E:\\UE_5.7" + ("（本项目 .uproject 声明的引擎是 %s，没找到）" % assoc
+                              if assoc else ""))
 
 
 def _project_stem():
@@ -97,14 +206,26 @@ def _project_stem():
     目录结构固定是 ``<project>/Plugins/ComboMCP``，所以上溯两级就是项目根；
     这里刻意不写死项目名，插件拷到别的项目也能正确选中编辑器实例。
     """
+    path = project_file_path()
+    return os.path.splitext(os.path.basename(path))[0] if path else None
+
+
+def _engine_version_of(engine_root):
+    """读 ``Engine/Build/Build.version`` 拿到 ``5.6.1`` 这样的短版本号。
+
+    用于 status 里直接回答"现在连的到底是哪个引擎"——混装 5.6/5.7 的机器上，
+    这是最容易搞错、也最值得显式确认的一件事。
+    """
+    if not engine_root:
+        return None
+    path = os.path.join(engine_root, "Engine", "Build", "Build.version")
     try:
-        project_root = os.path.dirname(os.path.dirname(ROOT))
-        for name in sorted(os.listdir(project_root)):
-            if name.endswith(".uproject"):
-                return os.path.splitext(name)[0]
+        with open(path, "r", encoding="utf-8") as handle:
+            data = json.load(handle)
     except Exception:
-        pass
-    return None
+        return None
+    return "%s.%s.%s" % (data.get("MajorVersion"), data.get("MinorVersion"),
+                         data.get("PatchVersion"))
 
 
 # ====================================================================== 源码打包
@@ -318,13 +439,28 @@ class UEBridge(object):
 
             # 优先选择打开了本项目的那一个。项目名从磁盘上的 .uproject 推导而不是
             # 写死——这样整个插件目录可以原样拷到别的项目里继续用。
+            #
+            # 比较顺序：先按项目**完整路径**（最准，同名项目也不会认错），
+            # 再看项目名，最后才退回 nodes[0]。同机同时开 5.6 与 5.7 两个编辑器时，
+            # 只比项目名会在两个项目名相近时选错实例。
             chosen = nodes[0]
             wanted = _project_stem()
+            wanted_dir = ""
+            proj_file = project_file_path()
+            if proj_file:
+                wanted_dir = os.path.normcase(os.path.dirname(proj_file))
             if wanted:
                 for node in nodes:
-                    if wanted.lower() in str(node.get("project_name", "")).lower():
+                    node_dir = os.path.normcase(str(node.get("project_dir") or ""))
+                    if wanted_dir and node_dir and \
+                            node_dir.replace("/", os.sep).rstrip(os.sep) == wanted_dir:
                         chosen = node
                         break
+                else:
+                    for node in nodes:
+                        if wanted.lower() in str(node.get("project_name", "")).lower():
+                            chosen = node
+                            break
 
             self._node_info = dict(chosen)
             self._node_id = chosen.get("node_id")
@@ -458,10 +594,13 @@ class UEBridge(object):
     # ---------------------------------------------------------------- 统计
 
     def stats(self):
-        return {
+        out = {
             "engine_root": self.engine_root,
+            "engine_version": _engine_version_of(self.engine_root),
+            "project_association": project_engine_association(),
             "connected": self.connected,
             "node": self._node_info,
             "calls": self._calls,
             "failures": self._failures,
         }
+        return out

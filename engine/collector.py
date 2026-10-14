@@ -130,6 +130,121 @@ print("__COLLECT_DONE__")
 '''
 
 
+# 资产发现的执行脚本。优先用资产注册表；注册表为空时退到**扫内容目录**。
+#
+# 为什么必须有兜底：实测在一个新建的 UE 5.6 项目里，`EditorAssetLibrary.list_assets`
+# 返回空列表——注册表缓存还没建立，而 `-run=PythonScript` 这种 commandlet 不会先做
+# 一次全量扫描。结果是"sync 说范围内没有资产"，但 Content 下明明有 .uasset。
+# 对一个刚克隆/刚建的项目，这条路是必然会走到的，所以不能只报错。
+_DISCOVER_SCRIPT = r'''# -*- coding: utf-8 -*-
+"""ComboMCP 资产发现（在编辑器内执行，只读）。由 engine/collector.py 生成。"""
+import json
+import os
+
+import unreal
+
+SCOPE = __SCOPE__
+WANTED = set(__CLASSES__)          # 空集 = 不按类过滤
+LIMIT = __LIMIT__
+PROJECT_DIR = __PROJECT_DIR__
+OUT = __OUT_PATH__
+FALLBACK = __FALLBACK__
+
+report = {"scope": SCOPE, "via": None, "total": 0, "assets": [],
+          "registry_count": 0, "fs_count": 0, "notes": []}
+
+
+def classify(path):
+    """取资产的类名。优先问注册表，问不到再读一次资产头。"""
+    try:
+        data = unreal.EditorAssetLibrary.find_asset_data(path)
+        if data is not None:
+            name = str(data.asset_class_path.asset_name)
+            if name:
+                return name
+    except Exception:
+        pass
+    try:
+        asset = unreal.load_asset(path)
+    except Exception:
+        return ""
+    if asset is None:
+        return ""
+    try:
+        return asset.get_class().get_name()
+    except Exception:
+        return ""
+
+
+def from_registry():
+    try:
+        return list(unreal.EditorAssetLibrary.list_assets(SCOPE, recursive=True) or [])
+    except Exception as exc:
+        report["notes"].append("list_assets failed: %s" % exc)
+        return []
+
+
+def from_filesystem():
+    """扫 <项目>/Content 下的 .uasset，换成 /Game 包路径。
+
+    只在注册表给不出东西时用。注意跳过 UE 的内部约定：
+      * ``_Generated_`` 下的东西（世界分区/外部 Actor 的生成物）；
+      * 以 ``_`` 开头的文件名不是约定，但 ``_Generated_`` 目录是。
+    """
+    root = os.path.join(PROJECT_DIR, "Content")
+    if not os.path.isdir(root):
+        return []
+    found = []
+    for base, dirs, files in os.walk(root):
+        dirs[:] = [d for d in dirs if d != "_Generated_"]
+        for name in files:
+            if not name.endswith(".uasset"):
+                continue
+            rel = os.path.relpath(os.path.join(base, name), root)
+            rel = rel.replace("\\", "/")[:-len(".uasset")]
+            if "/_Generated_/" in rel or rel.startswith("_Generated_/"):
+                continue
+            found.append("/Game/" + rel)
+    return found
+
+
+candidates = from_registry()
+report["registry_count"] = len(candidates)
+if candidates:
+    report["via"] = "asset_registry"
+elif FALLBACK:
+    candidates = from_filesystem()
+    report["fs_count"] = len(candidates)
+    report["via"] = "filesystem_walk" if candidates else None
+    if candidates:
+        report["notes"].append(
+            "资产注册表为空（新项目常见），已改为扫 Content 目录发现资产。")
+
+candidates = sorted(set(candidates))
+
+# 先按类过滤再截断：否则 limit 会被前面一堆无关资产吃掉
+kept = []
+for path in candidates:
+    if len(kept) >= LIMIT:
+        break
+    cls = classify(path)
+    if not cls:
+        continue
+    if WANTED and cls not in WANTED:
+        continue
+    kept.append({"path": path, "class": cls})
+
+report["total"] = len(kept)
+report["candidates"] = len(candidates)
+report["assets"] = kept
+
+with open(OUT, "w", encoding="utf-8") as fh:
+    json.dump(report, fh, ensure_ascii=False, indent=1)
+
+print("__DISCOVER_DONE__")
+'''
+
+
 def _editor_cmd_path(engine):
     """按平台推导 UnrealEditor-Cmd 的位置。
 
@@ -260,13 +375,18 @@ def _read_index():
 
 
 def discover_assets(scope="/Game", class_names=None, engine_root=None,
-                    timeout=1800, limit=400):
+                    timeout=1800, limit=400, fallback_walk=True):
     """用一次 commandlet 列出范围内指定类的资产路径。
 
-    ``class_names=None`` 表示只要蓝图与动画类（连招系统关心的都在这里）。
+    ``class_names`` 语义：
+      * ``None`` 或 ``[]`` —— **不按类过滤，列出全部**。这是读取范围扩展到
+        材质/贴图/网格/关卡之后的正确默认值：以前默认只列蓝图与动画类，
+        于是"sync /Game"永远采不到材质。
+      * 给了列表 —— 只列这些类。
+
+    ``fallback_walk`` 为真时，资产注册表为空会退回扫 Content 目录——新建项目
+    里注册表往往还没建起来，没有这条兜底就会误报"范围内没有资产"。
     """
-    class_names = class_names or ["Blueprint", "AnimMontage", "AnimSequence",
-                                  "AnimBlueprint", "DataTable", "UserDefinedStruct"]
     os.makedirs(WORK_DIR, exist_ok=True)
     try:
         engine, exe = _find_editor_cmd(engine_root)
@@ -276,24 +396,23 @@ def discover_assets(scope="/Game", class_names=None, engine_root=None,
 
     out_path = os.path.join(WORK_DIR, "discovered.json")
     script_path = os.path.join(WORK_DIR, "discover.py")
-    source = (
-        "import json, unreal\n"
-        "wanted = set(%r)\n"
-        "out = []\n"
-        "for p in unreal.EditorAssetLibrary.list_assets(%r, recursive=True) or []:\n"
-        "    try:\n"
-        "        d = unreal.EditorAssetLibrary.find_asset_data(p)\n"
-        "        cls = str(d.asset_class_path.asset_name) if d is not None else ''\n"
-        "    except Exception:\n"
-        "        cls = ''\n"
-        "    if cls in wanted:\n"
-        "        out.append({'path': p, 'class': cls})\n"
-        "open(%r, 'w', encoding='utf-8').write(json.dumps(out))\n"
-        "print('__DISCOVER_DONE__')\n"
-    ) % (class_names, scope, out_path)
+
+    source = (_DISCOVER_SCRIPT
+              .replace("__SCOPE__", json.dumps(scope))
+              .replace("__CLASSES__", json.dumps(list(class_names or [])))
+              .replace("__LIMIT__", str(int(limit)))
+              .replace("__PROJECT_DIR__", json.dumps(PROJECT_ROOT))
+              .replace("__OUT_PATH__", json.dumps(out_path))
+              .replace("__FALLBACK__", "True" if fallback_walk else "False"))
 
     with open(script_path, "w", encoding="utf-8") as handle:
         handle.write(source)
+
+    if os.path.isfile(out_path):
+        try:
+            os.remove(out_path)
+        except OSError:
+            pass
 
     try:
         subprocess.run([exe, project, "-run=PythonScript", "-Script=%s" % script_path,
@@ -311,7 +430,20 @@ def discover_assets(scope="/Game", class_names=None, engine_root=None,
             found = json.load(handle)
     except Exception as exc:
         return {"error": str(exc)}
-    return {"scope": scope, "assets": found[:limit], "total": len(found)}
+
+    out = {
+        "scope": scope,
+        "assets": (found.get("assets") or [])[:limit],
+        "total": found.get("total", 0),
+        "via": found.get("via"),
+        "candidates": found.get("candidates"),
+        "registry_count": found.get("registry_count"),
+        "fs_count": found.get("fs_count"),
+    }
+    notes = found.get("notes") or []
+    if notes:
+        out["notes"] = notes
+    return out
 
 
 def discover_montages(scope="/Game", engine_root=None, timeout=1800):

@@ -1,0 +1,34 @@
+﻿Begin Object Class=/Script/Engine.SkeletalMesh Name="SkeletalCube" ExportPath="/Script/Engine.SkeletalMesh'/Engine/EngineMeshes/SkeletalCube.SkeletalCube'"
+   Begin Object Class=/Script/Engine.AssetImportData Name="AssetImportData" ExportPath="/Script/Engine.AssetImportData'/Engine/EngineMeshes/SkeletalCube.SkeletalCube:AssetImportData'"
+   End Object
+   Begin Object Class=/Script/Engine.AssetImportData Name="AssetImportData_30" ExportPath="/Script/Engine.AssetImportData'/Engine/EngineMeshes/SkeletalCube.SkeletalCube:AssetImportData_30'"
+   End Object
+   Begin Object Class=/Script/UnrealEd.SceneThumbnailInfo Name="SceneThumbnailInfo_3" ExportPath="/Script/UnrealEd.SceneThumbnailInfo'/Engine/EngineMeshes/SkeletalCube.SkeletalCube:SceneThumbnailInfo_3'"
+   End Object
+   Begin Object Class=/Script/Engine.SkeletalMeshEditorData Name="SkeletalMeshEditorData_0" ExportPath="/Script/Engine.SkeletalMeshEditorData'/Engine/EngineMeshes/SkeletalCube.SkeletalCube:SkeletalMeshEditorData_0'"
+   End Object
+   Begin Object Class=/Script/Engine.SkeletalMeshDescriptionBulkData Name="SkeletalMeshDescriptionBulkData_0" ExportPath="/Script/Engine.SkeletalMeshDescriptionBulkData'/Engine/EngineMeshes/SkeletalCube.SkeletalCube:SkeletalMeshDescriptionBulkData_0'"
+      Begin Object Class=/Script/SkeletalMeshDescription.SkeletalMeshDescription Name="MeshDescription" Archetype="/Script/SkeletalMeshDescription.SkeletalMeshDescription'/Script/Engine.Default__SkeletalMeshDescriptionBulkData:MeshDescription'" ExportPath="/Script/SkeletalMeshDescription.SkeletalMeshDescription'/Engine/EngineMeshes/SkeletalCube.SkeletalCube:SkeletalMeshDescriptionBulkData_0.MeshDescription'"
+      End Object
+   End Object
+   Begin Object Name="AssetImportData" ExportPath="/Script/Engine.AssetImportData'/Engine/EngineMeshes/SkeletalCube.SkeletalCube:AssetImportData'"
+   End Object
+   Begin Object Name="AssetImportData_30" ExportPath="/Script/Engine.AssetImportData'/Engine/EngineMeshes/SkeletalCube.SkeletalCube:AssetImportData_30'"
+   End Object
+   Begin Object Name="SceneThumbnailInfo_3" ExportPath="/Script/UnrealEd.SceneThumbnailInfo'/Engine/EngineMeshes/SkeletalCube.SkeletalCube:SceneThumbnailInfo_3'"
+   End Object
+   Begin Object Name="SkeletalMeshEditorData_0" ExportPath="/Script/Engine.SkeletalMeshEditorData'/Engine/EngineMeshes/SkeletalCube.SkeletalCube:SkeletalMeshEditorData_0'"
+   End Object
+   Begin Object Name="SkeletalMeshDescriptionBulkData_0" ExportPath="/Script/Engine.SkeletalMeshDescriptionBulkData'/Engine/EngineMeshes/SkeletalCube.SkeletalCube:SkeletalMeshDescriptionBulkData_0'"
+      Begin Object Name="MeshDescription" ExportPath="/Script/SkeletalMeshDescription.SkeletalMeshDescription'/Engine/EngineMeshes/SkeletalCube.SkeletalCube:SkeletalMeshDescriptionBulkData_0.MeshDescription'"
+      End Object
+   End Object
+   SourceModels(0)=(TriangleCount=12,VertexCount=24,Bounds=(Origin=(X=0.000000,Y=0.000000,Z=12.598425),BoxExtent=(X=12.598425,Y=12.598425,Z=12.598425),SphereRadius=21.821112),CachedSkinWeightProfileNames=,CachedMorphTargetNames=,CachedHasVertexColors=(True),CachedVertexColorGuid=EE000276EE000276EE000276EE000276,MeshDescriptionBulkData="/Script/Engine.SkeletalMeshDescriptionBulkData'SkeletalMeshDescriptionBulkData_0'")
+   Skeleton="/Script/Engine.Skeleton'/Engine/EngineMeshes/SkeletalCube_Skeleton.SkeletalCube_Skeleton'"
+   LODInfo(0)=(LODHysteresis=0.020000,BuildSettings=(bRecomputeNormals=False,bUseBackwardsCompatibleF16TruncUVs=True),ReductionSettings=(NumOfTrianglesPercentage=1.000000,NumOfVertPercentage=1.000000))
+   bHasVertexColors=True
+   VertexColorGuid=CF88A09CCF88A09CCF88A09CCF88A09C
+   AssetImportData="/Script/Engine.AssetImportData'AssetImportData_30'"
+   ThumbnailInfo="/Script/UnrealEd.SceneThumbnailInfo'SceneThumbnailInfo_3'"
+   SamplingInfo=(BuiltData=(WholeMeshBuiltData=(())))
+End Object

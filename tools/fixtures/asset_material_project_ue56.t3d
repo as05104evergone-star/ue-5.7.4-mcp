@@ -1,0 +1,569 @@
+﻿Begin Object Class=/Script/Engine.Material Name="M_MainConcrete" ExportPath="/Script/Engine.Material'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete'"
+   Begin Object Class=/Script/Engine.MaterialEditorOnlyData Name="M_MainConcreteEditorOnlyData" ExportPath="/Script/Engine.MaterialEditorOnlyData'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:M_MainConcreteEditorOnlyData'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionAdd Name="MaterialExpressionAdd_0" ExportPath="/Script/Engine.MaterialExpressionAdd'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionAdd_0'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionAppendVector Name="MaterialExpressionAppendVector_0" ExportPath="/Script/Engine.MaterialExpressionAppendVector'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionAppendVector_0'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionAppendVector Name="MaterialExpressionAppendVector_1" ExportPath="/Script/Engine.MaterialExpressionAppendVector'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionAppendVector_1'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionAppendVector Name="MaterialExpressionAppendVector_2" ExportPath="/Script/Engine.MaterialExpressionAppendVector'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionAppendVector_2'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionAppendVector Name="MaterialExpressionAppendVector_3" ExportPath="/Script/Engine.MaterialExpressionAppendVector'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionAppendVector_3'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionComment Name="MaterialExpressionComment_0" ExportPath="/Script/Engine.MaterialExpressionComment'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionComment_0'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionComment Name="MaterialExpressionComment_1" ExportPath="/Script/Engine.MaterialExpressionComment'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionComment_1'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionComment Name="MaterialExpressionComment_14" ExportPath="/Script/Engine.MaterialExpressionComment'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionComment_14'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionComment Name="MaterialExpressionComment_2" ExportPath="/Script/Engine.MaterialExpressionComment'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionComment_2'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionComment Name="MaterialExpressionComment_3" ExportPath="/Script/Engine.MaterialExpressionComment'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionComment_3'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionComment Name="MaterialExpressionComment_4" ExportPath="/Script/Engine.MaterialExpressionComment'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionComment_4'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionComment Name="MaterialExpressionComment_5" ExportPath="/Script/Engine.MaterialExpressionComment'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionComment_5'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionConstant Name="MaterialExpressionConstant_4" ExportPath="/Script/Engine.MaterialExpressionConstant'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionConstant_4'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionConstant Name="MaterialExpressionConstant_6" ExportPath="/Script/Engine.MaterialExpressionConstant'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionConstant_6'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionConstant Name="MaterialExpressionConstant_8" ExportPath="/Script/Engine.MaterialExpressionConstant'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionConstant_8'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMaterialFunctionCall Name="MaterialExpressionMaterialFunctionCall_0" ExportPath="/Script/Engine.MaterialExpressionMaterialFunctionCall'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMaterialFunctionCall_0'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMaterialFunctionCall Name="MaterialExpressionMaterialFunctionCall_2" ExportPath="/Script/Engine.MaterialExpressionMaterialFunctionCall'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMaterialFunctionCall_2'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMaterialFunctionCall Name="MaterialExpressionMaterialFunctionCall_3" ExportPath="/Script/Engine.MaterialExpressionMaterialFunctionCall'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMaterialFunctionCall_3'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMaterialFunctionCall Name="MaterialExpressionMaterialFunctionCall_4" ExportPath="/Script/Engine.MaterialExpressionMaterialFunctionCall'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMaterialFunctionCall_4'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMaterialFunctionCall Name="MaterialExpressionMaterialFunctionCall_92" ExportPath="/Script/Engine.MaterialExpressionMaterialFunctionCall'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMaterialFunctionCall_92'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_0" ExportPath="/Script/Engine.MaterialExpressionMultiply'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMultiply_0'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_1" ExportPath="/Script/Engine.MaterialExpressionMultiply'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMultiply_1'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_10" ExportPath="/Script/Engine.MaterialExpressionMultiply'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMultiply_10'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_2" ExportPath="/Script/Engine.MaterialExpressionMultiply'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMultiply_2'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_3" ExportPath="/Script/Engine.MaterialExpressionMultiply'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMultiply_3'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_5" ExportPath="/Script/Engine.MaterialExpressionMultiply'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMultiply_5'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_6" ExportPath="/Script/Engine.MaterialExpressionMultiply'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMultiply_6'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionMultiply Name="MaterialExpressionMultiply_7" ExportPath="/Script/Engine.MaterialExpressionMultiply'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMultiply_7'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionNormalize Name="MaterialExpressionNormalize_2" ExportPath="/Script/Engine.MaterialExpressionNormalize'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionNormalize_2'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionObjectRadius Name="MaterialExpressionObjectRadius_0" ExportPath="/Script/Engine.MaterialExpressionObjectRadius'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionObjectRadius_0'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionOneMinus Name="MaterialExpressionOneMinus_0" ExportPath="/Script/Engine.MaterialExpressionOneMinus'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionOneMinus_0'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionScalarParameter Name="MaterialExpressionScalarParameter_0" ExportPath="/Script/Engine.MaterialExpressionScalarParameter'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionScalarParameter_0'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionScalarParameter Name="MaterialExpressionScalarParameter_1" ExportPath="/Script/Engine.MaterialExpressionScalarParameter'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionScalarParameter_1'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionScalarParameter Name="MaterialExpressionScalarParameter_10" ExportPath="/Script/Engine.MaterialExpressionScalarParameter'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionScalarParameter_10'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionScalarParameter Name="MaterialExpressionScalarParameter_13" ExportPath="/Script/Engine.MaterialExpressionScalarParameter'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionScalarParameter_13'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionScalarParameter Name="MaterialExpressionScalarParameter_9" ExportPath="/Script/Engine.MaterialExpressionScalarParameter'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionScalarParameter_9'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionTextureCoordinate Name="MaterialExpressionTextureCoordinate_0" ExportPath="/Script/Engine.MaterialExpressionTextureCoordinate'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionTextureCoordinate_0'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionTextureSampleParameter2D Name="MaterialExpressionTextureSampleParameter2D_0" ExportPath="/Script/Engine.MaterialExpressionTextureSampleParameter2D'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionTextureSampleParameter2D_0'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionTextureSampleParameter2D Name="MaterialExpressionTextureSampleParameter2D_1" ExportPath="/Script/Engine.MaterialExpressionTextureSampleParameter2D'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionTextureSampleParameter2D_1'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionTextureSampleParameter2D Name="MaterialExpressionTextureSampleParameter2D_3" ExportPath="/Script/Engine.MaterialExpressionTextureSampleParameter2D'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionTextureSampleParameter2D_3'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionTextureSampleParameter2D Name="MaterialExpressionTextureSampleParameter2D_4" ExportPath="/Script/Engine.MaterialExpressionTextureSampleParameter2D'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionTextureSampleParameter2D_4'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionTextureSampleParameter2D Name="MaterialExpressionTextureSampleParameter2D_5" ExportPath="/Script/Engine.MaterialExpressionTextureSampleParameter2D'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionTextureSampleParameter2D_5'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionTextureSampleParameter2D Name="MaterialExpressionTextureSampleParameter2D_6" ExportPath="/Script/Engine.MaterialExpressionTextureSampleParameter2D'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionTextureSampleParameter2D_6'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionVectorParameter Name="MaterialExpressionVectorParameter_0" ExportPath="/Script/Engine.MaterialExpressionVectorParameter'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionVectorParameter_0'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionVectorParameter Name="MaterialExpressionVectorParameter_1" ExportPath="/Script/Engine.MaterialExpressionVectorParameter'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionVectorParameter_1'"
+   End Object
+   Begin Object Class=/Script/Engine.MaterialExpressionVertexColor Name="MaterialExpressionVertexColor_0" ExportPath="/Script/Engine.MaterialExpressionVertexColor'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionVertexColor_0'"
+   End Object
+   Begin Object Class=/Script/UnrealEd.SceneThumbnailInfoWithPrimitive Name="SceneThumbnailInfoWithPrimitive_0" ExportPath="/Script/UnrealEd.SceneThumbnailInfoWithPrimitive'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:SceneThumbnailInfoWithPrimitive_0'"
+   End Object
+   Begin Object Name="M_MainConcreteEditorOnlyData" ExportPath="/Script/Engine.MaterialEditorOnlyData'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:M_MainConcreteEditorOnlyData'"
+      BaseColor=(Constant=(R=0.501961,G=0.501961,B=0.501961,A=1.000000),Expression="/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_5'")
+      Metallic=(Expression="/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_6'",OutputIndex=3,Mask=1,MaskB=1)
+      Roughness=(Expression="/Script/Engine.MaterialExpressionAdd'M_MainConcrete:MaterialExpressionAdd_0'")
+      Normal=(Constant=(X=0.000000,Y=0.000000,Z=0.000000),Expression="/Script/Engine.MaterialExpressionNormalize'M_MainConcrete:MaterialExpressionNormalize_2'")
+      AmbientOcclusion=(Constant=0.000000,Expression="/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_1'")
+      ExpressionCollection=(Expressions=("/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_5'","/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_6'","/Script/Engine.MaterialExpressionAdd'M_MainConcrete:MaterialExpressionAdd_0'","/Script/Engine.MaterialExpressionNormalize'M_MainConcrete:MaterialExpressionNormalize_2'","/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_1'","/Script/Engine.MaterialExpressionMaterialFunctionCall'M_MainConcrete:MaterialExpressionMaterialFunctionCall_2'","/Script/Engine.MaterialExpressionMaterialFunctionCall'M_MainConcrete:MaterialExpressionMaterialFunctionCall_0'","/Script/Engine.MaterialExpressionVertexColor'M_MainConcrete:MaterialExpressionVertexColor_0'","/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_0'","/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_0'","/Script/Engine.MaterialExpressionScalarParameter'M_MainConcrete:MaterialExpressionScalarParameter_0'","/Script/Engine.MaterialExpressionVectorParameter'M_MainConcrete:MaterialExpressionVectorParameter_0'","/Script/Engine.MaterialExpressionVectorParameter'M_MainConcrete:MaterialExpressionVectorParameter_1'","/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_3'","/Script/Engine.MaterialExpressionObjectRadius'M_MainConcrete:MaterialExpressionObjectRadius_0'","/Script/Engine.MaterialExpressionTextureCoordinate'M_MainConcrete:MaterialExpressionTextureCoordinate_0'","/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_2'","/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_3'","/Script/Engine.MaterialExpressionConstant'M_MainConcrete:MaterialExpressionConstant_8'","/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_10'","/Script/Engine.MaterialExpressionScalarParameter'M_MainConcrete:MaterialExpressionScalarParameter_13'","/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_4'","/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_7'","/Script/Engine.MaterialExpressionAppendVector'M_MainConcrete:MaterialExpressionAppendVector_2'","/Script/Engine.MaterialExpressionConstant'M_MainConcrete:MaterialExpressionConstant_6'","/Script/Engine.MaterialExpressionScalarParameter'M_MainConcrete:MaterialExpressionScalarParameter_10'","/Script/Engine.MaterialExpressionAppendVector'M_MainConcrete:MaterialExpressionAppendVector_3'","/Script/Engine.MaterialExpressionMaterialFunctionCall'M_MainConcrete:MaterialExpressionMaterialFunctionCall_3'","/Script/Engine.MaterialExpressionScalarParameter'M_MainConcrete:MaterialExpressionScalarParameter_9'","/Script/Engine.MaterialExpressionAppendVector'M_MainConcrete:MaterialExpressionAppendVector_0'","/Script/Engine.MaterialExpressionAppendVector'M_MainConcrete:MaterialExpressionAppendVector_1'","/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_6'","/Script/Engine.MaterialExpressionConstant'M_MainConcrete:MaterialExpressionConstant_4'","/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_1'","/Script/Engine.MaterialExpressionMaterialFunctionCall'M_MainConcrete:MaterialExpressionMaterialFunctionCall_4'","/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_5'","/Script/Engine.MaterialExpressionScalarParameter'M_MainConcrete:MaterialExpressionScalarParameter_1'","/Script/Engine.MaterialExpressionOneMinus'M_MainConcrete:MaterialExpressionOneMinus_0'","/Script/Engine.MaterialExpressionMaterialFunctionCall'M_MainConcrete:MaterialExpressionMaterialFunctionCall_92'"),EditorComments=("/Script/Engine.MaterialExpressionComment'M_MainConcrete:MaterialExpressionComment_1'","/Script/Engine.MaterialExpressionComment'M_MainConcrete:MaterialExpressionComment_14'","/Script/Engine.MaterialExpressionComment'M_MainConcrete:MaterialExpressionComment_0'","/Script/Engine.MaterialExpressionComment'M_MainConcrete:MaterialExpressionComment_2'","/Script/Engine.MaterialExpressionComment'M_MainConcrete:MaterialExpressionComment_3'","/Script/Engine.MaterialExpressionComment'M_MainConcrete:MaterialExpressionComment_4'","/Script/Engine.MaterialExpressionComment'M_MainConcrete:MaterialExpressionComment_5'"))
+      ParameterGroupData(0)=(GroupName="ORM")
+      ParameterGroupData(1)=(GroupName="Albedo")
+      ParameterGroupData(2)=(GroupName="Height")
+      ParameterGroupData(3)=(GroupName="Albedo")
+      ParameterGroupData(4)=(GroupName="Albedo")
+      ParameterGroupData(5)=(GroupName="Height")
+      ParameterGroupData(6)=(GroupName="TIle")
+      ParameterGroupData(7)=(GroupName="NormalMap")
+      ParameterGroupData(8)=(GroupName="NormalMap")
+      ParameterGroupData(9)=(GroupName="NormalMap")
+      ParameterGroupData(10)=(GroupName="AO")
+      ParameterGroupData(11)=(GroupName="NormalMap")
+      ParameterGroupData(12)=(GroupName="AO")
+   End Object
+   Begin Object Name="MaterialExpressionAdd_0" ExportPath="/Script/Engine.MaterialExpressionAdd'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionAdd_0'"
+      A=(Expression="/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_6'",OutputIndex=2,Mask=1,MaskG=1)
+      B=(Expression="/Script/Engine.MaterialExpressionOneMinus'M_MainConcrete:MaterialExpressionOneMinus_0'")
+      MaterialExpressionEditorX=752
+      MaterialExpressionEditorY=144
+      MaterialExpressionGuid=DF6DF90D44A3679AFE315AB0EF99F586
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionAppendVector_0" ExportPath="/Script/Engine.MaterialExpressionAppendVector'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionAppendVector_0'"
+      A=(Expression="/Script/Engine.MaterialExpressionScalarParameter'M_MainConcrete:MaterialExpressionScalarParameter_9'")
+      B=(Expression="/Script/Engine.MaterialExpressionScalarParameter'M_MainConcrete:MaterialExpressionScalarParameter_9'")
+      MaterialExpressionEditorX=-366
+      MaterialExpressionEditorY=834
+      MaterialExpressionGuid=5B44B78741A3FAE1C603E3AAA5A51839
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionAppendVector_1" ExportPath="/Script/Engine.MaterialExpressionAppendVector'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionAppendVector_1'"
+      A=(Expression="/Script/Engine.MaterialExpressionAppendVector'M_MainConcrete:MaterialExpressionAppendVector_0'")
+      B=(Expression="/Script/Engine.MaterialExpressionConstant'M_MainConcrete:MaterialExpressionConstant_4'")
+      MaterialExpressionEditorX=-270
+      MaterialExpressionEditorY=834
+      MaterialExpressionGuid=5B44B78741A3FAE1C603E3AAA5A51839
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionAppendVector_2" ExportPath="/Script/Engine.MaterialExpressionAppendVector'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionAppendVector_2'"
+      A=(Expression="/Script/Engine.MaterialExpressionScalarParameter'M_MainConcrete:MaterialExpressionScalarParameter_10'")
+      B=(Expression="/Script/Engine.MaterialExpressionScalarParameter'M_MainConcrete:MaterialExpressionScalarParameter_10'")
+      MaterialExpressionEditorX=-384
+      MaterialExpressionEditorY=1424
+      MaterialExpressionGuid=5B44B78741A3FAE1C603E3AAA5A51839
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionAppendVector_3" ExportPath="/Script/Engine.MaterialExpressionAppendVector'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionAppendVector_3'"
+      A=(Expression="/Script/Engine.MaterialExpressionAppendVector'M_MainConcrete:MaterialExpressionAppendVector_2'")
+      B=(Expression="/Script/Engine.MaterialExpressionConstant'M_MainConcrete:MaterialExpressionConstant_6'")
+      MaterialExpressionEditorX=-272
+      MaterialExpressionEditorY=1424
+      MaterialExpressionGuid=5B44B78741A3FAE1C603E3AAA5A51839
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionComment_0" ExportPath="/Script/Engine.MaterialExpressionComment'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionComment_0'"
+      SizeX=701
+      SizeY=508
+      Text="Normal Tiled"
+      MaterialExpressionEditorX=-624
+      MaterialExpressionEditorY=544
+      MaterialExpressionGuid=9E9B24264EB8D6F8D7BDD08A15945367
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionComment_1" ExportPath="/Script/Engine.MaterialExpressionComment'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionComment_1'"
+      SizeX=464
+      SizeY=480
+      Text="ObjectScale"
+      MaterialExpressionEditorX=-1616
+      MaterialExpressionEditorY=-336
+      MaterialExpressionGuid=2966D28B46EFB9F78E97B2A3F0D8C7E1
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionComment_14" ExportPath="/Script/Engine.MaterialExpressionComment'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionComment_14'"
+      SizeX=672
+      SizeY=448
+      Text="Normal Tiled 2"
+      MaterialExpressionEditorX=-624
+      MaterialExpressionEditorY=1168
+      MaterialExpressionGuid=7D84D0C448EF71ED724CBF83270B06A9
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionComment_2" ExportPath="/Script/Engine.MaterialExpressionComment'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionComment_2'"
+      SizeX=784
+      SizeY=432
+      Text="AO"
+      MaterialExpressionEditorX=432
+      MaterialExpressionEditorY=416
+      MaterialExpressionGuid=0DC2D41C43377B86D10D8289CC73BF3E
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionComment_3" ExportPath="/Script/Engine.MaterialExpressionComment'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionComment_3'"
+      SizeX=332
+      SizeY=727
+      Text="Albedo"
+      MaterialExpressionEditorX=-576
+      MaterialExpressionEditorY=-784
+      MaterialExpressionGuid=D648C88A495FB4357478378FB24ABE37
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionComment_4" ExportPath="/Script/Engine.MaterialExpressionComment'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionComment_4'"
+      SizeX=300
+      SizeY=305
+      Text="Height"
+      MaterialExpressionEditorX=-912
+      MaterialExpressionEditorY=-352
+      MaterialExpressionGuid=07AC2945400B20F2C8BD5B804EC903B0
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionComment_5" ExportPath="/Script/Engine.MaterialExpressionComment'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionComment_5'"
+      SizeX=300
+      SizeY=305
+      Text="OcclusionRoughnessMetal"
+      MaterialExpressionEditorX=-162
+      MaterialExpressionEditorY=62
+      MaterialExpressionGuid=E53DF75E4B17D107FD0542B30ABC6851
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionConstant_4" ExportPath="/Script/Engine.MaterialExpressionConstant'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionConstant_4'"
+      R=1.000000
+      MaterialExpressionEditorX=-350
+      MaterialExpressionEditorY=946
+      MaterialExpressionGuid=643930C3472EE6185B5CACA96A1DC27A
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionConstant_6" ExportPath="/Script/Engine.MaterialExpressionConstant'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionConstant_6'"
+      R=1.000000
+      MaterialExpressionEditorX=-384
+      MaterialExpressionEditorY=1520
+      MaterialExpressionGuid=643930C3472EE6185B5CACA96A1DC27A
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionConstant_8" ExportPath="/Script/Engine.MaterialExpressionConstant'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionConstant_8'"
+      R=0.010000
+      MaterialExpressionEditorX=-1584
+      MaterialExpressionEditorY=-64
+      MaterialExpressionGuid=A010B75A49E4B92C7EC4D5A2855DB851
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionMaterialFunctionCall_0" ExportPath="/Script/Engine.MaterialExpressionMaterialFunctionCall'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMaterialFunctionCall_0'"
+      MaterialFunction="/Script/Engine.MaterialFunction'/Engine/Functions/Engine_MaterialFunctions02/Texturing/HeightLerp.HeightLerp'"
+      FunctionInputs(0)=(ExpressionInputId=522930F442483EA49A2C159D365AD20A,Input=(Expression="/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_0'",InputName="A",Mask=1,MaskR=1,MaskG=1,MaskB=1))
+      FunctionInputs(1)=(ExpressionInputId=DCC75A8E43017C3B1AF2AD94F32E13C5,Input=(Expression="/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_0'",InputName="B"))
+      FunctionInputs(2)=(ExpressionInputId=7AB68F0841F03075F06D038ED7950EBE,Input=(Expression="/Script/Engine.MaterialExpressionVertexColor'M_MainConcrete:MaterialExpressionVertexColor_0'",OutputIndex=1,InputName="Transition Phase",Mask=1,MaskR=1))
+      FunctionInputs(3)=(ExpressionInputId=2D66D8C24B09717A97E8BEA535A4BDC8,Input=(Expression="/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_3'",InputName="Height Texture",Mask=1,MaskR=1,MaskG=1,MaskB=1))
+      FunctionInputs(4)=(ExpressionInputId=25E63B0149C87485647617BC60B64B95,Input=(Expression="/Script/Engine.MaterialExpressionScalarParameter'M_MainConcrete:MaterialExpressionScalarParameter_0'",InputName="Contrast"))
+      FunctionOutputs(0)=(ExpressionOutputId=DB6322FA4F561176DCDD2DA917597668,Output=(OutputName="Results"))
+      FunctionOutputs(1)=(ExpressionOutputId=BD30F3BD4F03EC073582C193699130FD,Output=(OutputName="Alpha"))
+      FunctionOutputs(2)=(ExpressionOutputId=D985320A43D35E6B187D16931DD224EF,Output=(OutputName="Lerp Alpha No Contrast"))
+      MaterialExpressionEditorX=128
+      MaterialExpressionEditorY=-560
+      MaterialExpressionGuid=9A623E4C4F8E0F1238047EBB009FA8C6
+      Material="/Script/Engine.Material'M_MainConcrete'"
+      Outputs(0)=(OutputName="Results")
+      Outputs(1)=(OutputName="Alpha")
+      Outputs(2)=(OutputName="Lerp Alpha No Contrast")
+   End Object
+   Begin Object Name="MaterialExpressionMaterialFunctionCall_2" ExportPath="/Script/Engine.MaterialExpressionMaterialFunctionCall'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMaterialFunctionCall_2'"
+      MaterialFunction="/Script/Engine.MaterialFunction'/Engine/Functions/Engine_MaterialFunctions02/Texturing/HeightLerp.HeightLerp'"
+      FunctionInputs(0)=(ExpressionInputId=522930F442483EA49A2C159D365AD20A,Input=(Expression="/Script/Engine.MaterialExpressionMaterialFunctionCall'M_MainConcrete:MaterialExpressionMaterialFunctionCall_0'",InputName="A"))
+      FunctionInputs(1)=(ExpressionInputId=DCC75A8E43017C3B1AF2AD94F32E13C5,Input=(Expression="/Script/Engine.MaterialExpressionMaterialFunctionCall'M_MainConcrete:MaterialExpressionMaterialFunctionCall_3'",InputName="B"))
+      FunctionInputs(2)=(ExpressionInputId=7AB68F0841F03075F06D038ED7950EBE,Input=(Expression="/Script/Engine.MaterialExpressionVertexColor'M_MainConcrete:MaterialExpressionVertexColor_0'",OutputIndex=2,InputName="Transition Phase",Mask=1,MaskG=1))
+      FunctionInputs(3)=(ExpressionInputId=2D66D8C24B09717A97E8BEA535A4BDC8,Input=(Expression="/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_3'",InputName="Height Texture",Mask=1,MaskR=1,MaskG=1,MaskB=1))
+      FunctionInputs(4)=(ExpressionInputId=25E63B0149C87485647617BC60B64B95,Input=(Expression="/Script/Engine.MaterialExpressionScalarParameter'M_MainConcrete:MaterialExpressionScalarParameter_0'",InputName="Contrast"))
+      FunctionOutputs(0)=(ExpressionOutputId=DB6322FA4F561176DCDD2DA917597668,Output=(OutputName="Results"))
+      FunctionOutputs(1)=(ExpressionOutputId=BD30F3BD4F03EC073582C193699130FD,Output=(OutputName="Alpha"))
+      FunctionOutputs(2)=(ExpressionOutputId=D985320A43D35E6B187D16931DD224EF,Output=(OutputName="Lerp Alpha No Contrast"))
+      MaterialExpressionEditorX=528
+      MaterialExpressionEditorY=-256
+      MaterialExpressionGuid=9A623E4C4F8E0F1238047EBB009FA8C6
+      Material="/Script/Engine.Material'M_MainConcrete'"
+      Outputs(0)=(OutputName="Results")
+      Outputs(1)=(OutputName="Alpha")
+      Outputs(2)=(OutputName="Lerp Alpha No Contrast")
+   End Object
+   Begin Object Name="MaterialExpressionMaterialFunctionCall_3" ExportPath="/Script/Engine.MaterialExpressionMaterialFunctionCall'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMaterialFunctionCall_3'"
+      MaterialFunction="/Script/Engine.MaterialFunction'/Engine/Functions/Engine_MaterialFunctions02/Math/MultiplyAdd.MultiplyAdd'"
+      FunctionInputs(0)=(ExpressionInputId=6365A65843D5BF2AAE06679A5164DD8F,Input=(Expression="/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_0'",InputName="Base",Mask=1,MaskR=1,MaskG=1,MaskB=1))
+      FunctionInputs(1)=(ExpressionInputId=FD8EE93F41DE641FB6C1DF8FFBD146A4,Input=(Expression="/Script/Engine.MaterialExpressionVectorParameter'M_MainConcrete:MaterialExpressionVectorParameter_0'",InputName="Add",Mask=1,MaskR=1,MaskG=1,MaskB=1))
+      FunctionOutputs(0)=(ExpressionOutputId=91B53E9B42980001E4BCF6860281A1E4,Output=(OutputName="Result"))
+      MaterialExpressionEditorX=-112
+      MaterialExpressionEditorY=-256
+      MaterialExpressionGuid=CE3FBD1C427B38297488DAB3C4A81972
+      Material="/Script/Engine.Material'M_MainConcrete'"
+      Outputs(0)=(OutputName="Result")
+   End Object
+   Begin Object Name="MaterialExpressionMaterialFunctionCall_4" ExportPath="/Script/Engine.MaterialExpressionMaterialFunctionCall'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMaterialFunctionCall_4'"
+      MaterialFunction="/Script/Engine.MaterialFunction'/Engine/Functions/Engine_MaterialFunctions01/ImageAdjustment/CheapContrast.CheapContrast'"
+      FunctionInputs(0)=(ExpressionInputId=95C9DA0E48D34168E34AD3A607BAA34E,Input=(Expression="/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_1'",InputName="In",Mask=1,MaskR=1,MaskG=1,MaskB=1))
+      FunctionInputs(1)=(ExpressionInputId=3C3E177E485D8FFFC35D1482F0A20020,Input=(Expression="/Script/Engine.MaterialExpressionScalarParameter'M_MainConcrete:MaterialExpressionScalarParameter_1'",InputName="Contrast"))
+      FunctionOutputs(0)=(ExpressionOutputId=5067ED8C4A2EFE82DB33F99EBE37E80E,Output=(OutputName="Result"))
+      MaterialExpressionEditorX=752
+      MaterialExpressionEditorY=560
+      MaterialExpressionGuid=22C6DB274F65AA710DEFC5BB708D8977
+      Material="/Script/Engine.Material'M_MainConcrete'"
+      Outputs(0)=(OutputName="Result")
+   End Object
+   Begin Object Name="MaterialExpressionMaterialFunctionCall_92" ExportPath="/Script/Engine.MaterialExpressionMaterialFunctionCall'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMaterialFunctionCall_92'"
+      MaterialFunction="/Script/Engine.MaterialFunction'/Engine/Functions/Engine_MaterialFunctions02/Utility/BlendAngleCorrectedNormals.BlendAngleCorrectedNormals'"
+      FunctionInputs(0)=(ExpressionInputId=471965E548C55D27E606D3832C490AD3,Input=(Expression="/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_6'",InputName="BaseNormal"))
+      FunctionInputs(1)=(ExpressionInputId=7E2E487F49DE5A67E3A1EFA3FD83D041,Input=(Expression="/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_7'",InputName="AdditionalNormal"))
+      FunctionOutputs(0)=(ExpressionOutputId=E2F3EA0E41E2637BBAA2A4A0FEF38E6A,Output=(OutputName="Result"))
+      MaterialExpressionEditorX=-16
+      MaterialExpressionEditorY=624
+      MaterialExpressionGuid=9411BF5045BF0D30405F80A4C54F6E77
+      Material="/Script/Engine.Material'M_MainConcrete'"
+      Outputs(0)=(OutputName="Result")
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_0" ExportPath="/Script/Engine.MaterialExpressionMultiply'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMultiply_0'"
+      A=(Expression="/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_0'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
+      B=(Expression="/Script/Engine.MaterialExpressionVectorParameter'M_MainConcrete:MaterialExpressionVectorParameter_1'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
+      MaterialExpressionEditorX=-112
+      MaterialExpressionEditorY=-368
+      MaterialExpressionGuid=6B8160E544076C4997E1048264455D6C
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_1" ExportPath="/Script/Engine.MaterialExpressionMultiply'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMultiply_1'"
+      A=(Expression="/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_6'",OutputIndex=1,Mask=1,MaskR=1)
+      B=(Expression="/Script/Engine.MaterialExpressionMaterialFunctionCall'M_MainConcrete:MaterialExpressionMaterialFunctionCall_4'")
+      MaterialExpressionEditorX=976
+      MaterialExpressionEditorY=480
+      MaterialExpressionGuid=FEBBB92E473FF1A9641D81A87748B9F0
+      Material="/Script/Engine.Material'M_MainConcrete'"
+      bCollapsed=False
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_10" ExportPath="/Script/Engine.MaterialExpressionMultiply'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMultiply_10'"
+      A=(Expression="/Script/Engine.MaterialExpressionConstant'M_MainConcrete:MaterialExpressionConstant_8'")
+      B=(Expression="/Script/Engine.MaterialExpressionScalarParameter'M_MainConcrete:MaterialExpressionScalarParameter_13'")
+      MaterialExpressionEditorX=-1488
+      MaterialExpressionEditorY=-64
+      MaterialExpressionGuid=F49A865C47B0E3D6EEBAE4AD400EE5AB
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_2" ExportPath="/Script/Engine.MaterialExpressionMultiply'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMultiply_2'"
+      A=(Expression="/Script/Engine.MaterialExpressionTextureCoordinate'M_MainConcrete:MaterialExpressionTextureCoordinate_0'")
+      B=(Expression="/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_3'")
+      MaterialExpressionEditorX=-1264
+      MaterialExpressionEditorY=-272
+      MaterialExpressionGuid=79E29B5D42E5AEFDC8335D8490323AF4
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_3" ExportPath="/Script/Engine.MaterialExpressionMultiply'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMultiply_3'"
+      A=(Expression="/Script/Engine.MaterialExpressionObjectRadius'M_MainConcrete:MaterialExpressionObjectRadius_0'")
+      B=(Expression="/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_10'")
+      MaterialExpressionEditorX=-1376
+      MaterialExpressionEditorY=-144
+      MaterialExpressionGuid=79E29B5D42E5AEFDC8335D8490323AF4
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_5" ExportPath="/Script/Engine.MaterialExpressionMultiply'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMultiply_5'"
+      A=(Expression="/Script/Engine.MaterialExpressionMaterialFunctionCall'M_MainConcrete:MaterialExpressionMaterialFunctionCall_2'")
+      B=(Expression="/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_1'")
+      MaterialExpressionEditorX=1088
+      MaterialExpressionEditorY=-192
+      MaterialExpressionGuid=A852D912412EADBC0FDA0C8C434A55BD
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_6" ExportPath="/Script/Engine.MaterialExpressionMultiply'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMultiply_6'"
+      A=(Expression="/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_5'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
+      B=(Expression="/Script/Engine.MaterialExpressionAppendVector'M_MainConcrete:MaterialExpressionAppendVector_1'")
+      MaterialExpressionEditorX=-174
+      MaterialExpressionEditorY=610
+      MaterialExpressionGuid=5AF03BDC4BE0B884B85D2EB2CDFADB0B
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionMultiply_7" ExportPath="/Script/Engine.MaterialExpressionMultiply'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionMultiply_7'"
+      A=(Expression="/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_4'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
+      B=(Expression="/Script/Engine.MaterialExpressionAppendVector'M_MainConcrete:MaterialExpressionAppendVector_3'")
+      MaterialExpressionEditorX=-160
+      MaterialExpressionEditorY=1216
+      MaterialExpressionGuid=5AF03BDC4BE0B884B85D2EB2CDFADB0B
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionNormalize_2" ExportPath="/Script/Engine.MaterialExpressionNormalize'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionNormalize_2'"
+      VectorInput=(Expression="/Script/Engine.MaterialExpressionMaterialFunctionCall'M_MainConcrete:MaterialExpressionMaterialFunctionCall_92'")
+      MaterialExpressionEditorX=240
+      MaterialExpressionEditorY=640
+      MaterialExpressionGuid=CA415B364FB4D730B1BB9AA87DF2F62A
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionObjectRadius_0" ExportPath="/Script/Engine.MaterialExpressionObjectRadius'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionObjectRadius_0'"
+      MaterialExpressionEditorX=-1568
+      MaterialExpressionEditorY=-192
+      MaterialExpressionGuid=73ABCBF341F422439B56EEB234C335A5
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionOneMinus_0" ExportPath="/Script/Engine.MaterialExpressionOneMinus'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionOneMinus_0'"
+      Input=(Expression="/Script/Engine.MaterialExpressionTextureSampleParameter2D'M_MainConcrete:MaterialExpressionTextureSampleParameter2D_1'",Mask=1,MaskR=1,MaskG=1,MaskB=1)
+      MaterialExpressionEditorX=544
+      MaterialExpressionEditorY=64
+      MaterialExpressionGuid=8D60C1114E59CC15D4B7F69FE7AB3FFD
+      Material="/Script/Engine.Material'M_MainConcrete'"
+      bCommentBubbleVisible=True
+      bCollapsed=False
+   End Object
+   Begin Object Name="MaterialExpressionScalarParameter_0" ExportPath="/Script/Engine.MaterialExpressionScalarParameter'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionScalarParameter_0'"
+      DefaultValue=0.330000
+      SliderMax=8.000000
+      ParameterName="Blend Contrast"
+      ExpressionGUID=212E0AC4461EA94FF330289DDACC7024
+      Group="Height"
+      MaterialExpressionEditorX=-112
+      MaterialExpressionEditorY=-144
+      MaterialExpressionGuid=6AA8660A4B1ADABCCBCCB7BBE92F561C
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionScalarParameter_1" ExportPath="/Script/Engine.MaterialExpressionScalarParameter'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionScalarParameter_1'"
+      DefaultValue=0.200000
+      SliderMax=1.000000
+      ParameterName="AO contrast"
+      ExpressionGUID=AFA9C9484B4F75A5651E36B34D8F9D74
+      Group="AO"
+      MaterialExpressionEditorX=544
+      MaterialExpressionEditorY=512
+      MaterialExpressionGuid=CD8402B047E88C0A808104AE5400E735
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionScalarParameter_10" ExportPath="/Script/Engine.MaterialExpressionScalarParameter'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionScalarParameter_10'"
+      DefaultValue=1.000000
+      SliderMax=2.000000
+      ParameterName="NormalTile 2 Internsity"
+      ExpressionGUID=5D32CC1844763F3F4374F9BC3B214CDA
+      Group="NormalMap"
+      MaterialExpressionEditorX=-592
+      MaterialExpressionEditorY=1424
+      MaterialExpressionGuid=1403D19A4BE95D6535704380899FC357
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionScalarParameter_13" ExportPath="/Script/Engine.MaterialExpressionScalarParameter'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionScalarParameter_13'"
+      DefaultValue=0.500000
+      ParameterName="MainTile"
+      ExpressionGUID=175441434EE38FF3A0626497B85768B9
+      Group="TIle"
+      MaterialExpressionEditorX=-1584
+      MaterialExpressionEditorY=48
+      MaterialExpressionGuid=59C3C1334B92640F04BD4C9C8B99CAD7
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionScalarParameter_9" ExportPath="/Script/Engine.MaterialExpressionScalarParameter'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionScalarParameter_9'"
+      DefaultValue=1.000000
+      ParameterName="NormalTileIntensity"
+      ExpressionGUID=8DB67A154370981887932992C58B4A12
+      Group="NormalMap"
+      MaterialExpressionEditorX=-574
+      MaterialExpressionEditorY=834
+      MaterialExpressionGuid=1403D19A4BE95D6535704380899FC357
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionTextureCoordinate_0" ExportPath="/Script/Engine.MaterialExpressionTextureCoordinate'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionTextureCoordinate_0'"
+      MaterialExpressionEditorX=-1568
+      MaterialExpressionEditorY=-272
+      MaterialExpressionGuid=2FDD9459487AC11C2F8A95BC6E6DE005
+      Material="/Script/Engine.Material'M_MainConcrete'"
+      bRealtimePreview=True
+   End Object
+   Begin Object Name="MaterialExpressionTextureSampleParameter2D_0" ExportPath="/Script/Engine.MaterialExpressionTextureSampleParameter2D'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionTextureSampleParameter2D_0'"
+      ParameterName="Plain"
+      ExpressionGUID=BB402D2B4F6B432CCBE24A93CA5C7E05
+      Group="Albedo"
+      Coordinates=(Expression="/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_2'")
+      Texture=None
+      MaterialExpressionEditorX=-494
+      MaterialExpressionEditorY=-734
+      MaterialExpressionGuid=CEA569FF4B346FACA6DF3A9F5FFB042A
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionTextureSampleParameter2D_1" ExportPath="/Script/Engine.MaterialExpressionTextureSampleParameter2D'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionTextureSampleParameter2D_1'"
+      ParameterName="AOBaked"
+      ExpressionGUID=EB2F97354F62FD57915D29BCF03F6AA7
+      Group="AO"
+      Texture=None
+      SamplerType=SAMPLERTYPE_Masks
+      MaterialExpressionEditorX=464
+      MaterialExpressionEditorY=608
+      MaterialExpressionGuid=5049AFED4B5BE687C016D39AB5730FBF
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionTextureSampleParameter2D_3" ExportPath="/Script/Engine.MaterialExpressionTextureSampleParameter2D'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionTextureSampleParameter2D_3'"
+      ParameterName="Heightmap"
+      ExpressionGUID=031CC6EE49855F693B78E684F7EFC77E
+      Group="Height"
+      Coordinates=(Expression="/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_2'")
+      Texture=None
+      SamplerType=SAMPLERTYPE_Masks
+      MaterialExpressionEditorX=-862
+      MaterialExpressionEditorY=-302
+      MaterialExpressionGuid=604AFA2B4D7220E6C2F14F9A0F751F0C
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionTextureSampleParameter2D_4" ExportPath="/Script/Engine.MaterialExpressionTextureSampleParameter2D'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionTextureSampleParameter2D_4'"
+      ParameterName="NormalTile 2"
+      ExpressionGUID=60FB90FD4097AF408CEF839076A9BAEE
+      Group="NormalMap"
+      Coordinates=(Expression="/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_2'")
+      Texture=None
+      SamplerType=SAMPLERTYPE_Normal
+      MaterialExpressionEditorX=-400
+      MaterialExpressionEditorY=1216
+      MaterialExpressionGuid=B354709C47F2A6A5C55CE88FF89F9B35
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionTextureSampleParameter2D_5" ExportPath="/Script/Engine.MaterialExpressionTextureSampleParameter2D'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionTextureSampleParameter2D_5'"
+      ParameterName="NormalTile"
+      ExpressionGUID=E074A4314F476B649F79B8B077177266
+      Group="NormalMap"
+      Coordinates=(Expression="/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_2'")
+      Texture=None
+      SamplerType=SAMPLERTYPE_Normal
+      MaterialExpressionEditorX=-432
+      MaterialExpressionEditorY=608
+      MaterialExpressionGuid=EAF56E924335C212D3E76788E6D93546
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionTextureSampleParameter2D_6" ExportPath="/Script/Engine.MaterialExpressionTextureSampleParameter2D'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionTextureSampleParameter2D_6'"
+      ParameterName="ORM"
+      ExpressionGUID=448698FB4ED3EBCBD9A02CB269FC1A88
+      Group="ORM"
+      Coordinates=(Expression="/Script/Engine.MaterialExpressionMultiply'M_MainConcrete:MaterialExpressionMultiply_2'")
+      Texture=None
+      SamplerType=SAMPLERTYPE_Masks
+      MaterialExpressionEditorX=-112
+      MaterialExpressionEditorY=112
+      MaterialExpressionGuid=97C1F0B44084D57C70719DBA4D204623
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionVectorParameter_0" ExportPath="/Script/Engine.MaterialExpressionVectorParameter'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionVectorParameter_0'"
+      DefaultValue=(R=0.609375,G=0.609375,B=0.609375,A=1.000000)
+      ParameterName="Light"
+      ExpressionGUID=531B687F4EF6E9EC055DADAE629BE23F
+      Group="Albedo"
+      MaterialExpressionEditorX=-528
+      MaterialExpressionEditorY=-272
+      MaterialExpressionGuid=579B220E4ACD46AEC9754DB9496EDDA6
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionVectorParameter_1" ExportPath="/Script/Engine.MaterialExpressionVectorParameter'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionVectorParameter_1'"
+      DefaultValue=(R=0.755208,G=0.711081,B=0.621242,A=1.000000)
+      ParameterName="Dark"
+      ExpressionGUID=5DA5CE334D355FD3268E6F886F547FBC
+      Group="Albedo"
+      MaterialExpressionEditorX=-526
+      MaterialExpressionEditorY=-494
+      MaterialExpressionGuid=7AC802924CF65B3A7DA4138B079C982D
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="MaterialExpressionVertexColor_0" ExportPath="/Script/Engine.MaterialExpressionVertexColor'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:MaterialExpressionVertexColor_0'"
+      MaterialExpressionEditorX=-560
+      MaterialExpressionEditorY=112
+      MaterialExpressionGuid=E3CA863545FA5C85BC21D7898788524B
+      Material="/Script/Engine.Material'M_MainConcrete'"
+   End Object
+   Begin Object Name="SceneThumbnailInfoWithPrimitive_0" ExportPath="/Script/UnrealEd.SceneThumbnailInfoWithPrimitive'/Game/ComboMCP_Probe/M_MainConcrete.M_MainConcrete:SceneThumbnailInfoWithPrimitive_0'"
+   End Object
+   bUsedWithStaticLighting=True
+   EditorX=1664
+   EditorY=-112
+   bCanMaskedBeAssumedOpaque=True
+   PixelDepthOffsetMode=PDOM_Legacy
+   StateId=A1823F04AC35F8B023E313804EA8D13D
+   EditorOnlyData="/Script/Engine.MaterialEditorOnlyData'M_MainConcreteEditorOnlyData'"
+   TextureStreamingDataVersion=1
+   TextureStreamingData(0)=(SamplingScale=1.000000,UVChannelIndex=0,TextureName="T_Brutalist_01_Ductwork_Support_02_AO",TextureReference="/Game/Asset1/Asset/BrutalistLevelscapes/Textures/Baked_AO/T_Brutalist_01_Ductwork_Support_02_AO.T_Brutalist_01_Ductwork_Support_02_AO")
+   ThumbnailInfo="/Script/UnrealEd.SceneThumbnailInfoWithPrimitive'SceneThumbnailInfoWithPrimitive_0'"
+   ParameterOverviewExpansion=(("-12Normal_Baked", True),("-12Tile", True),("-12None", True),("-12Global", True),("-12Global Albedo", True),("-12Global AO", True),("-12Global Height", True),("-12Global NormalMap", True),("-12Global ORM", True),("-12Global TIle", True))
+   LightingGuid=1F8A77C3431FC7BA45F61CA2379DF848
+End Object

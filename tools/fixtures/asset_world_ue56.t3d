@@ -1,0 +1,179 @@
+﻿Begin Object Class=/Script/Engine.World Name="OpenWorld" ExportPath="/Script/Engine.World'/Engine/Maps/Templates/OpenWorld.OpenWorld'"
+   Begin Object Class=/Script/Engine.Level Name="PersistentLevel" ExportPath="/Script/Engine.Level'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel'"
+      Begin Object Class=/Script/Engine.WorldSettings Name="WorldSettings" ExportPath="/Script/Engine.WorldSettings'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldSettings'"
+         Begin Object Class=/Script/Engine.BookMark Name="BookMark_0" ExportPath="/Script/Engine.BookMark'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldSettings.BookMark_0'"
+         End Object
+         Begin Object Class=/Script/NavigationSystem.NavigationSystemModuleConfig Name="NavigationSystemModuleConfig_0" ExportPath="/Script/NavigationSystem.NavigationSystemModuleConfig'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldSettings.NavigationSystemModuleConfig_0'"
+         End Object
+         Begin Object Class=/Script/Engine.WorldPartition Name="WorldPartition_1" ExportPath="/Script/Engine.WorldPartition'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldSettings.WorldPartition_1'"
+            Begin Object Class=/Script/Engine.WorldPartitionRuntimeHashSet Name="WorldPartitionRuntimeHashSet_0" ExportPath="/Script/Engine.WorldPartitionRuntimeHashSet'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldSettings.WorldPartition_1.WorldPartitionRuntimeHashSet_0'"
+               Begin Object Class=/Script/Engine.RuntimePartitionLHGrid Name="RuntimePartitionLHGrid_0" ExportPath="/Script/Engine.RuntimePartitionLHGrid'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldSettings.WorldPartition_1.WorldPartitionRuntimeHashSet_0.RuntimePartitionLHGrid_0'"
+               End Object
+               Begin Object Class=/Script/Engine.RuntimePartitionPersistent Name="RuntimePartitionPersistent_0" ExportPath="/Script/Engine.RuntimePartitionPersistent'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldSettings.WorldPartition_1.WorldPartitionRuntimeHashSet_0.RuntimePartitionPersistent_0'"
+               End Object
+            End Object
+            Begin Object Class=/Script/Engine.WorldPartitionEditorSpatialHash Name="WorldPartitionEditorSpatialHash_0" ExportPath="/Script/Engine.WorldPartitionEditorSpatialHash'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldSettings.WorldPartition_1.WorldPartitionEditorSpatialHash_0'"
+            End Object
+         End Object
+      End Object
+      Begin Object Class=/Script/Engine.Brush Name="Brush_0" ExportPath="/Script/Engine.Brush'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.Brush_0'"
+         Begin Object Class=/Script/Engine.BrushComponent Name="BrushComponent0" Archetype="/Script/Engine.BrushComponent'/Script/Engine.Default__Brush:BrushComponent0'" ExportPath="/Script/Engine.BrushComponent'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.Brush_0.BrushComponent0'"
+         End Object
+      End Object
+      Begin Brush Name=Brush
+      End Brush
+      Begin Brush Name=Model_0
+      End Brush
+      Begin Object Class=/Script/Engine.WorldDataLayers Name="WorldDataLayers" ExportPath="/Script/Engine.WorldDataLayers'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldDataLayers'"
+         Begin Object Class=/Script/Engine.BillboardComponent Name="Sprite" ExportPath="/Script/Engine.BillboardComponent'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldDataLayers.Sprite'"
+         End Object
+      End Object
+      Begin Object Class=/Script/Engine.ActorFolder Name="ActorFolder_UID_B7E9BD5B-45A65265-4791988D-EF54CCEB" ExportPath="/Script/Engine.ActorFolder'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.ActorFolder_UID_B7E9BD5B-45A65265-4791988D-EF54CCEB'"
+      End Object
+      Begin Object Class=/Script/Engine.ActorFolder Name="ActorFolder_UID_26DBD2B7-434D115B-68D5CB88-82E789AF" ExportPath="/Script/Engine.ActorFolder'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.ActorFolder_UID_26DBD2B7-434D115B-68D5CB88-82E789AF'"
+      End Object
+      Begin Object Class=/Script/Engine.ActorFolder Name="ActorFolder_UID_069B7288-4681824D-D41E3894-8B3951F3" ExportPath="/Script/Engine.ActorFolder'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.ActorFolder_UID_069B7288-4681824D-D41E3894-8B3951F3'"
+      End Object
+      Begin Object Class=/Script/Engine.ActorFolder Name="ActorFolder_UID_C11A5F59-487C0DB2-AA58CABA-5DEDB377" ExportPath="/Script/Engine.ActorFolder'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.ActorFolder_UID_C11A5F59-487C0DB2-AA58CABA-5DEDB377'"
+      End Object
+      Begin Object Class=/Script/Engine.ActorFolder Name="ActorFolder_UID_F0B34F1C-498F52BA-314B94B2-A472577C" ExportPath="/Script/Engine.ActorFolder'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.ActorFolder_UID_F0B34F1C-498F52BA-314B94B2-A472577C'"
+      End Object
+      Begin Object Class=/Script/Engine.ActorFolder Name="ActorFolder_UID_5D23A82E-411A5CFD-F61C6285-B0703174" ExportPath="/Script/Engine.ActorFolder'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.ActorFolder_UID_5D23A82E-411A5CFD-F61C6285-B0703174'"
+      End Object
+   End Object
+   Begin Object Class=/Script/Engine.ContentBundleManager Name="ContentBundleManager_0" ExportPath="/Script/Engine.ContentBundleManager'/Engine/Maps/Templates/OpenWorld.OpenWorld:ContentBundleManager_0'"
+      Begin Object Class=/Script/Engine.ContentBundleDuplicateForPIEHelper Name="ContentBundleDuplicateForPIEHelper_0" ExportPath="/Script/Engine.ContentBundleDuplicateForPIEHelper'/Engine/Maps/Templates/OpenWorld.OpenWorld:ContentBundleManager_0.ContentBundleDuplicateForPIEHelper_0'"
+      End Object
+   End Object
+   Begin Object Class=/Script/UnrealEd.WorldThumbnailInfo Name="WorldThumbnailInfo_0" ExportPath="/Script/UnrealEd.WorldThumbnailInfo'/Engine/Maps/Templates/OpenWorld.OpenWorld:WorldThumbnailInfo_0'"
+   End Object
+   Begin Object Name="PersistentLevel" ExportPath="/Script/Engine.Level'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel'"
+      Begin Object Name="WorldSettings" ExportPath="/Script/Engine.WorldSettings'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldSettings'"
+         Begin Object Name="BookMark_0" ExportPath="/Script/Engine.BookMark'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldSettings.BookMark_0'"
+            Location=(X=542.473882,Y=1.910855,Z=318.369810)
+            Rotation=(Pitch=-13.988928,Yaw=-179.798175,Roll=-0.000001)
+         End Object
+         Begin Object Name="NavigationSystemModuleConfig_0" ExportPath="/Script/NavigationSystem.NavigationSystemModuleConfig'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldSettings.NavigationSystemModuleConfig_0'"
+            bCreateOnClient=True
+            bAutoSpawnMissingNavData=True
+            NavigationSystemClass="/Script/NavigationSystem.NavigationSystemV1"
+         End Object
+         Begin Object Name="WorldPartition_1" ExportPath="/Script/Engine.WorldPartition'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldSettings.WorldPartition_1'"
+            Begin Object Name="WorldPartitionRuntimeHashSet_0" ExportPath="/Script/Engine.WorldPartitionRuntimeHashSet'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldSettings.WorldPartition_1.WorldPartitionRuntimeHashSet_0'"
+               Begin Object Name="RuntimePartitionLHGrid_0" ExportPath="/Script/Engine.RuntimePartitionLHGrid'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldSettings.WorldPartition_1.WorldPartitionRuntimeHashSet_0.RuntimePartitionLHGrid_0'"
+                  CellSize=25200
+                  Name="MainGrid"
+                  LoadingRange=76800
+                  DebugColor=(R=0.930146,G=0.419408,B=0.710742,A=1.000000)
+               End Object
+               Begin Object Name="RuntimePartitionPersistent_0" ExportPath="/Script/Engine.RuntimePartitionPersistent'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldSettings.WorldPartition_1.WorldPartitionRuntimeHashSet_0.RuntimePartitionPersistent_0'"
+                  Name="PersistentLevel"
+                  bClientOnlyVisible=True
+                  LoadingRange=0
+                  DebugColor=(R=0.501120,G=0.998356,B=0.719138,A=1.000000)
+                  HLODIndex=0
+               End Object
+               RuntimePartitions(0)=(Name="MainGrid",Class="/Script/CoreUObject.Class'/Script/Engine.RuntimePartitionLHGrid'",MainLayer="/Script/Engine.RuntimePartitionLHGrid'RuntimePartitionLHGrid_0'",HLODSetups=((Name="PersistentLevel",HLODLayers=("/Script/Engine.HLODLayer'/Engine/OpenWorldTemplate/HLOD/HLOD0_Instancing.HLOD0_Instancing'"),bIsSpatiallyLoaded=False,PartitionLayer="/Script/Engine.RuntimePartitionPersistent'RuntimePartitionPersistent_0'")))
+            End Object
+            Begin Object Name="WorldPartitionEditorSpatialHash_0" ExportPath="/Script/Engine.WorldPartitionEditorSpatialHash'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldSettings.WorldPartition_1.WorldPartitionEditorSpatialHash_0'"
+            End Object
+            EditorHash="/Script/Engine.WorldPartitionEditorSpatialHash'WorldPartitionEditorSpatialHash_0'"
+            RuntimeHash="/Script/Engine.WorldPartitionRuntimeHashSet'WorldPartitionRuntimeHashSet_0'"
+            DefaultHLODLayer="/Script/Engine.HLODLayer'/Engine/OpenWorldTemplate/HLOD/HLOD0_Instancing.HLOD0_Instancing'"
+         End Object
+         bForceNoPrecomputedLighting=True
+         bIncludeGridSizeInNameForFoliageActors=True
+         bIncludeGridSizeInNameForPartitionedActors=True
+         NavigationSystemConfig="/Script/NavigationSystem.NavigationSystemModuleConfig'NavigationSystemModuleConfig_0'"
+         WorldPartition="/Script/Engine.WorldPartition'WorldPartition_1'"
+         LightmassSettings=()
+         DefaultWorldPartitionSettings=(LoadedEditorRegions=((Min=(X=-102480.867188,Y=-102536.195312,Z=-2097152.000000),Max=(X=102491.187500,Y=102276.851562,Z=2097152.000000),IsValid=True)))
+         BookmarkArray(0)=None
+         BookmarkArray(1)="/Script/Engine.BookMark'BookMark_0'"
+         BookmarkArray(2)=None
+         BookmarkArray(3)=None
+         BookmarkArray(4)=None
+         BookmarkArray(5)=None
+         BookmarkArray(6)=None
+         BookmarkArray(7)=None
+         BookmarkArray(8)=None
+         BookmarkArray(9)=None
+         ActorLabel="WorldSettings-1"
+      End Object
+      Begin Object Name="Brush_0" ExportPath="/Script/Engine.Brush'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.Brush_0'"
+         Begin Object Name="BrushComponent0" ExportPath="/Script/Engine.BrushComponent'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.Brush_0.BrushComponent0'"
+            Brush="/Script/Engine.Model'OpenWorld:PersistentLevel.Brush'"
+         End Object
+         bNotForClientOrServer=True
+         Brush="/Script/Engine.Model'OpenWorld:PersistentLevel.Brush'"
+         BrushComponent="BrushComponent0"
+         bHidden=False
+         SpawnCollisionHandlingMethod=AlwaysSpawn
+         RootComponent="BrushComponent0"
+         ActorLabel="Brush"
+      End Object
+      Begin Object Name="WorldDataLayers" ExportPath="/Script/Engine.WorldDataLayers'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldDataLayers'"
+         Begin Object Name="Sprite" ExportPath="/Script/Engine.BillboardComponent'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldDataLayers.Sprite'"
+         End Object
+         SpriteComponent="/Script/Engine.BillboardComponent'Sprite'"
+         RootComponent="/Script/Engine.BillboardComponent'Sprite'"
+         ActorLabel="WorldDataLayers-1"
+      End Object
+      Begin Object Name="ActorFolder_UID_B7E9BD5B-45A65265-4791988D-EF54CCEB" ExportPath="/Script/Engine.ActorFolder'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.ActorFolder_UID_B7E9BD5B-45A65265-4791988D-EF54CCEB'"
+         FolderGuid=B7E9BD5B45A652654791988DEF54CCEB
+         FolderLabel="Lighting"
+      End Object
+      Begin Object Name="ActorFolder_UID_26DBD2B7-434D115B-68D5CB88-82E789AF" ExportPath="/Script/Engine.ActorFolder'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.ActorFolder_UID_26DBD2B7-434D115B-68D5CB88-82E789AF'"
+         FolderGuid=26DBD2B7434D115B68D5CB8882E789AF
+         FolderLabel="HLOD"
+         bIsDeleted=True
+      End Object
+      Begin Object Name="ActorFolder_UID_069B7288-4681824D-D41E3894-8B3951F3" ExportPath="/Script/Engine.ActorFolder'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.ActorFolder_UID_069B7288-4681824D-D41E3894-8B3951F3'"
+         FolderGuid=069B72884681824DD41E38948B3951F3
+         FolderLabel="HLOD"
+         bFolderInitiallyExpanded=False
+      End Object
+      Begin Object Name="ActorFolder_UID_C11A5F59-487C0DB2-AA58CABA-5DEDB377" ExportPath="/Script/Engine.ActorFolder'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.ActorFolder_UID_C11A5F59-487C0DB2-AA58CABA-5DEDB377'"
+         ParentFolderGuid=069B72884681824DD41E38948B3951F3
+         FolderGuid=C11A5F59487C0DB2AA58CABA5DEDB377
+         FolderLabel="HLOD0_Instancing"
+         bFolderInitiallyExpanded=False
+      End Object
+      Begin Object Name="ActorFolder_UID_F0B34F1C-498F52BA-314B94B2-A472577C" ExportPath="/Script/Engine.ActorFolder'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.ActorFolder_UID_F0B34F1C-498F52BA-314B94B2-A472577C'"
+         ParentFolderGuid=26DBD2B7434D115B68D5CB8882E789AF
+         FolderGuid=F0B34F1C498F52BA314B94B2A472577C
+         FolderLabel="HLOD0"
+         bIsDeleted=True
+      End Object
+      Begin Object Name="ActorFolder_UID_5D23A82E-411A5CFD-F61C6285-B0703174" ExportPath="/Script/Engine.ActorFolder'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.ActorFolder_UID_5D23A82E-411A5CFD-F61C6285-B0703174'"
+         ParentFolderGuid=069B72884681824DD41E38948B3951F3
+         FolderGuid=5D23A82E411A5CFDF61C6285B0703174
+         FolderLabel="HLOD0"
+         bFolderInitiallyExpanded=False
+      End Object
+      bUseExternalActors=True
+      Model="/Script/Engine.Model'Model_0'"
+      LevelBuildDataId=9E2E659340C8FBE268D85EA49C9D070A
+      bIsPartitioned=True
+      WorldSettings="/Script/Engine.WorldSettings'WorldSettings'"
+      WorldDataLayers="/Script/Engine.WorldDataLayers'/Engine/Maps/Templates/OpenWorld.OpenWorld:PersistentLevel.WorldDataLayers'"
+      bUseActorFolders=True
+   End Object
+   Begin Object Name="ContentBundleManager_0" ExportPath="/Script/Engine.ContentBundleManager'/Engine/Maps/Templates/OpenWorld.OpenWorld:ContentBundleManager_0'"
+      Begin Object Name="ContentBundleDuplicateForPIEHelper_0" ExportPath="/Script/Engine.ContentBundleDuplicateForPIEHelper'/Engine/Maps/Templates/OpenWorld.OpenWorld:ContentBundleManager_0.ContentBundleDuplicateForPIEHelper_0'"
+      End Object
+      PIEDuplicateHelper="/Script/Engine.ContentBundleDuplicateForPIEHelper'ContentBundleDuplicateForPIEHelper_0'"
+   End Object
+   Begin Object Name="WorldThumbnailInfo_0" ExportPath="/Script/UnrealEd.WorldThumbnailInfo'/Engine/Maps/Templates/OpenWorld.OpenWorld:WorldThumbnailInfo_0'"
+   End Object
+   ThumbnailInfo="/Script/UnrealEd.WorldThumbnailInfo'WorldThumbnailInfo_0'"
+   EditorViews(0)=(CamUpdated=True)
+   EditorViews(1)=(CamUpdated=True)
+   EditorViews(2)=(CamUpdated=True)
+   EditorViews(3)=(CamPosition=(X=75201.914251,Y=85553.025721,Z=44620.977240),CamRotation=(Pitch=-24.199900,Yaw=-854.398190,Roll=0.000000),CamUpdated=True)
+   EditorViews(4)=(CamUpdated=True)
+   EditorViews(5)=(CamUpdated=True)
+   EditorViews(6)=(CamUpdated=True)
+   EditorViews(7)=(CamUpdated=True)
+   ContentBundleManager="/Script/Engine.ContentBundleManager'ContentBundleManager_0'"
+End Object

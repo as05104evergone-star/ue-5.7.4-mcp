@@ -2,6 +2,113 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.3.0] — 2026-10-14
+
+三件事：**读取范围不再限于蓝图与动画**、**能做基础操作**、**UE 5.6 实机验证并适配**。
+全部结论来自一个新建的隔离验证项目（UE 5.6.1），没有碰作者的任何项目。
+
+### 新增
+
+- **`asset`（读任意资产的统一入口）**：按类自动选语义摘要器，工具面从 21 → 24。
+  - `Material`：混合/着色模型、**每个输入是常量还是连着哪个表达式**、
+    声明的参数及默认值、表达式构成；
+  - `MaterialInstanceConstant`：父材质 + 参数覆盖（值缺失时显式说明为什么）；
+  - `Texture2D`：尺寸 / Mip / 源格式 / 压缩 / sRGB / LODGroup；
+  - `StaticMesh`：材质槽与槽名、包围盒、碰撞类型与预设、Lightmap 设置；
+  - `SkeletalMesh`：骨架、材质槽；
+  - `World`：已加载关卡、World Partition（runtime/editor hash、HLOD 层）、
+    `bIsPartitioned`；
+  - 其它任何类：通用视图（剔除导出噪音的属性 + 子对象类名直方图 + 大数组收敛）。
+  - `AnimMontage` / `AnimBlueprint` 自动转各自的专用读取器。
+- **`help`**：基础操作答疑。10 个主题（install / menu / sync / pie / level / logs /
+  remoteexec / actions / readorder / troubleshoot），支持中英混合的自然语言查询
+  （"怎么打开 PIE" → `pie`）。数据源是本地 `docs/quickstart.md`，不联网。
+- **`editor`（编辑器动作）**：`capabilities` / `pie`（start/stop/simulate/status）/
+  `level`（current/list/load/new/save/add）/ `actor`（list/selected）/
+  `logs`（tail/pattern/severity/file/category）。
+- **`ue/editor_actions.py`**：关卡与 PIE 动作的 UE 侧实现。
+- **`ue/asset_read.py`**：上述摘要器。纯数据、不 import `unreal`，所以 MCP 进程与
+  编辑器侧共用同一份源码——两边结果不会分裂。
+- **`engine/actions.py`**：写操作授权门。**默认关闭**，需 `COMBO_ALLOW_ACTIONS=1`
+  或单次 `confirm=true`。
+- **`engine/logs.py`**：读 `<项目>/Saved/Logs/*.log`，分级 + 正则 + 类别过滤。
+  **不需要编辑器在运行**——排查"编辑器刚崩过"时，能读的只有磁盘上的文件。
+
+### 兼容性（本版的重点）
+
+- **UE 5.6.1 实机验证通过**，与 5.7.4 并列成为"实测"组合。验证项目是新建的
+  `E:\UE_5.6\Projects\ComboMCP_Verify56`，**未触碰作者自己的任何项目**。
+  验证内容：插件加载、T3D 导出器存在、材质/材质实例/贴图/静态网格/骨骼网格/关卡/
+  字体/音效全部导出成功、`sync` 采集、`asset` 离线读取。
+- **按项目选引擎。** 原先引擎候选表把 5.7 恒排第一，于是 5.6 项目会被悄悄喂给
+  5.7 的导出器。现在先读项目 `.uproject` 的 `EngineAssociation` 再解析引擎根，
+  两个项目各用各的引擎，不需要环境变量。
+- **多编辑器实例按项目路径匹配**，不再只比项目名。
+- `status` 现在回报 `engine_version` / `project_association` / `engine_root`，
+  以及写操作策略状态。
+
+### 修复（都是"会安静地给错结果"的那一类）
+
+- **结构体属性此前全是原始字符串。** 普通属性赋值只做了去引号，没有走值解析器，
+  于是 `BaseColor=(Constant=...,Expression=...)`、`DefaultInstance=(...)`、
+  `Source=(SizeX=32,...)` 都停在字符串形态——**这正是"读不出材质输入图"的直接原因**。
+- **带尾逗号的结构体被静默降级成数组/字符串。** UE 普遍写
+  `(OpacityMaskClipValue=0.333300,)`，而跨行属性是被空格拼接的，续行还带缩进；
+  两条都会让"所有片段都是 `Key=`"的判定失败。改为过滤空片段 + `any()` 判定。
+- **二进制载荷不再铺进结果。** `CustomProperties TextureSourceData PayloadSize=4096 ...`
+  原先被当成普通属性字符串收下，一张 32×32 贴图就带 4096 字节十六进制，
+  把真正有用的字段淹掉。现在只记大小（`<payload: N bytes>`）。
+- **缓存键与用户输入不等价导致"刚 sync 完却读不到"。** 缓存里存的是包路径
+  `/Game/A/M.M`，人习惯写 `/Game/A/M`。新增 `normalize_asset_path` +
+  `read_cached`，所有离线读取统一走它。
+- **`sync` 的默认类过滤把材质挡在门外。** 原先默认只发现蓝图与动画类，
+  现在**不传 `classes` 就是全部资产**。
+- **资产注册表为空时发现会失败。** 新建项目的注册表缓存还没建立，
+  `list_assets` 返回空，而 `-run=PythonScript` 这种 commandlet 不会先做全量扫描。
+  实测就撞上了（报"范围内没有资产"但 Content 里明明有 .uasset）。现在退回扫
+  Content 目录，并在结果里说明走了哪条路。
+
+### 安全边界的变化（重要）
+
+**1.0–1.2 的"结构上没有改的能力"不再成立**，因为本版加入了可执行的编辑器动作
+（PIE / 关卡）。取而代之的是一条更明确、可验证的边界：
+
+- **读取类工具仍然只读**：不写入、不编译、不保存、不创建资产。
+- **写操作只有 7 个**：`pie.start/stop/simulate`、`level.load/new/save/add`。
+- **默认关闭**，需要 `COMBO_ALLOW_ACTIONS=1` 或单次 `confirm=true`；
+  未授权时返回带 `_actions_blocked` 的说明，而不是静默失败。
+- **两道门**：MCP 侧（`engine/actions.py`）挡模型误调，编辑器侧
+  （`ue/editor_actions.py::_guard_write`）挡绕过 MCP 直接经 Remote Execution 送进来的命令。
+- **明确不做**：执行任意 console 命令、保存任意资产、创建/修改/删除资产。
+
+### 实测修正的 UE 5.6 API 差异
+
+| 事项 | 5.6 实测结果 | 应对 |
+|---|---|---|
+| `unreal.log_capture_get` | **不存在**（5.7 才有） | 日志改读磁盘文件，两版行为一致 |
+| `LevelEditorSubsystem` 构造 | 直接实例化会**崩进程** | 统一用 `get_editor_subsystem`，且取不到就直接拒绝执行 |
+| commandlet 内的编辑器动作 | `EXCEPTION_ACCESS_VIOLATION`（`UnrealEditor-LevelEditor.dll`） | `_editor_ready` 先查编辑器世界，取不到即返回 `_need_editor` |
+| `MaterialEditorOnlyData` | 材质的输入引脚与 `ExpressionCollection` 挂在这个**子对象**上 | `_merged_view` 统一合并 `*EditorOnlyData` |
+| `WorldPartition` | 在 `World → Level → WorldSettings → WorldPartition` 第 4 层 | 摘要器走 6 层，并读 `bIsPartitioned` |
+
+### 测试
+
+**342 项断言全绿**（新增两组共 139 项）：
+
+| 套件 | 项数 |
+|---|---|
+| `test_t3d.py` | 60 |
+| `test_t3d_real.py` | 54 |
+| `test_wiring.py` | 48 |
+| `mcp_protocol_test.py` | 41 |
+| `test_asset_read.py`（新） | 63 |
+| `test_editor_actions.py`（新） | 66 |
+
+`test_asset_read.py` 的夹具是 **UE 5.6.1 真实导出**的 T3D（材质 / 材质实例 /
+贴图 / 静态网格 / 骨骼网格 / 关卡 / 字体），因为上面那几条修复**只有真数据才暴露得出来**。
+`test_editor_actions.py` 用一个**假的 unreal 模块**（没有任何编辑器子系统）
+验证 commandlet 隔离——即"这种情况下必须拒绝，而不是去试"。
+
 ## [1.2.0] — 2026-10-02
 
 从"读蓝图"扩到"**读引擎事实**"：新增 4 个知识库工具，并修掉三个会让工具
@@ -137,6 +244,7 @@
 3. `MemberParent` 是**完整对象路径**（`"/Script/CoreUObject.Class'/Script/Engine.Actor'"`），
    直接取会得到 `Class` 而不是 `Actor`。
 
+[1.3.0]: https://github.com/as05104evergone-star/ue-5.7.4-mcp/releases/tag/v1.3.0
 [1.2.0]: https://github.com/as05104evergone-star/ue-5.7.4-mcp/releases/tag/v1.2.0
 [1.1.0]: https://github.com/as05104evergone-star/ue-5.7.4-mcp/releases/tag/v1.1.0
 [1.0.0]: https://github.com/as05104evergone-star/ue-5.7.4-mcp/releases/tag/v1.0.0

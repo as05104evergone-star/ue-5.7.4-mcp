@@ -1,0 +1,6 @@
+﻿Begin Object Class=/Script/Engine.Font Name="Roboto" ExportPath="/Script/Engine.Font'/Engine/EngineFonts/Roboto.Roboto'"
+   FontCacheType=Runtime
+   LegacyFontSize=10
+   LegacyFontName="Regular"
+   CompositeFont=(DefaultTypeface=(Fonts=((Name="Regular",Font=(FontFaceAsset="/Script/Engine.FontFace'/Engine/EngineFonts/Faces/RobotoRegular.RobotoRegular'")),(Name="Bold",Font=(FontFaceAsset="/Script/Engine.FontFace'/Engine/EngineFonts/Faces/RobotoBold.RobotoBold'")),(Name="Italic",Font=(FontFaceAsset="/Script/Engine.FontFace'/Engine/EngineFonts/Faces/RobotoItalic.RobotoItalic'")),(Name="Bold Italic",Font=(FontFaceAsset="/Script/Engine.FontFace'/Engine/EngineFonts/Faces/RobotoBoldItalic.RobotoBoldItalic'")),(Name="Light",Font=(FontFaceAsset="/Script/Engine.FontFace'/Engine/EngineFonts/Faces/RobotoLight.RobotoLight'")))),FallbackTypeface=(Typeface=(Fonts=((Name="Regular",Font=(FontFaceAsset="/Script/Engine.FontFace'/Engine/EngineFonts/Faces/DroidSansFallback.DroidSansFallback'"))))))
+End Object

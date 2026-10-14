@@ -23,7 +23,7 @@ ROOT = os.path.dirname(HERE)
 UE_SRC_DIR = os.path.join(ROOT, "ue")
 
 # 依赖顺序：被依赖的在前
-PURE_MODULES = ("graph_ir", "t3d", "montage_t3d", "anim_bp_t3d")
+PURE_MODULES = ("graph_ir", "t3d", "montage_t3d", "anim_bp_t3d", "asset_read")
 
 _loaded = None
 
@@ -59,7 +59,8 @@ def load():
             raise
         setattr(pkg, name, mod)
 
-    _loaded = (pkg.graph_ir, pkg.t3d, pkg.montage_t3d, pkg.anim_bp_t3d)
+    _loaded = (pkg.graph_ir, pkg.t3d, pkg.montage_t3d, pkg.anim_bp_t3d,
+               pkg.asset_read)
     return _loaded
 
 
@@ -77,3 +78,7 @@ def montage_t3d():
 
 def anim_bp_t3d():
     return load()[3]
+
+
+def asset_read():
+    return load()[4]

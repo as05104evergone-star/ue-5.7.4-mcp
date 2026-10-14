@@ -46,8 +46,36 @@ def cache_path(asset_path):
     return os.path.join(CACHE_T3D, safe_name(asset_path))
 
 
+def normalize_asset_path(asset_path):
+    """把两种等价写法归一：``/Game/A/M.M`` 与 ``/Game/A/M`` -> ``/Game/A/M``。
+
+    UE 的"包路径"是 ``/Game/A/M.M``（最后一段是对象名），而人习惯写
+    ``/Game/A/M``。收集时拿到的通常是前者，用户输入通常是后者，两者必须
+    等价对待——否则会出现"刚 sync 完却报没有缓存"的假故障。
+    """
+    if not asset_path:
+        return asset_path
+    path = asset_path.strip()
+    if ":" in path:          # 子对象路径（/Game/A/M.M:SubObject）不归一
+        return path
+    tail = path.rsplit("/", 1)[-1]
+    if "." in tail:
+        head, _, _obj = tail.partition(".")
+        path = path[:len(path) - len(tail)] + head
+    return path
+
+
 def has_cache(asset_path):
-    return os.path.isfile(cache_path(asset_path))
+    """缓存里有没有这个资产（两种路径写法都认）。"""
+    if not asset_path:
+        return False
+    if os.path.isfile(cache_path(asset_path)):
+        return True
+    wanted = normalize_asset_path(asset_path).lower()
+    for key in load_index():
+        if normalize_asset_path(key).lower() == wanted:
+            return True
+    return False
 
 
 def read_text(asset_path):
@@ -98,20 +126,44 @@ def load_index():
         return {}
 
 
+def read_cached(asset_path):
+    """读缓存，并返回 ``(text, resolved_path)``。读不到时 text 为 None。
+
+    **所有离线读取都必须走这里**，不要各自去调 :func:`read_text`。
+    原因是缓存里的键是 UE 的"包路径"（``/Game/A/M.M``），而人写的是
+    ``/Game/A/M``；只做直接文件查找的话，"刚 sync 完却报没有缓存"就是必现的
+    假故障。这里统一做一次归一化解析。
+    """
+    text = read_text(asset_path)
+    if text is not None:
+        return text, asset_path
+    resolved, _entry = resolve_asset(asset_path)
+    if resolved and resolved != asset_path:
+        text = read_text(resolved)
+        if text is not None:
+            return text, resolved
+    return None, asset_path
+
+
 def resolve_asset(asset_path=None, hint=None):
     """把用户给的路径解析到缓存条目。
 
     支持三种输入：完整对象路径、只有资产名、或什么都不给（配合 hint 模糊匹配）。
+    两种等价写法（``/Game/A/M`` 与 ``/Game/A/M.M``）都会命中同一条。
     """
     index = load_index()
     if asset_path:
         entry = index.get(asset_path)
         if entry:
             return asset_path, entry
-        # 退一步：按文件名匹配（用户可能只给了 /Game/.../AC_Combat）
+        # 退一步：按归一化路径匹配（用户写 /Game/.../AC_Combat，
+        # 索引里存的是 /Game/.../AC_Combat.AC_Combat）
         target = safe_name(asset_path)
+        wanted = normalize_asset_path(asset_path).lower()
         for key, value in index.items():
             if value.get("file") == target or key == asset_path:
+                return key, value
+            if normalize_asset_path(key).lower() == wanted:
                 return key, value
         if has_cache(asset_path):
             return asset_path, {"file": safe_name(asset_path), "class": None}
@@ -128,7 +180,7 @@ def resolve_asset(asset_path=None, hint=None):
 
 
 def _graphs(asset_path):
-    text = read_text(asset_path)
+    text, _resolved = read_cached(asset_path)
     if text is None:
         return None, None, None
     graph_ir = pure.load()[0]
@@ -341,7 +393,7 @@ def audit(asset_path, graph_name=None):
 
 
 def montage_detail(asset_path, analyze=False):
-    text = read_text(asset_path)
+    text, asset_path = read_cached(asset_path)
     if text is None:
         return {"error": "没有 %s 的 T3D 缓存。Montage 的 Section/Notify 只能走 "
                          "T3D——反射读不到它们（CompositeSections 是裸 UPROPERTY）。"
@@ -370,7 +422,7 @@ def anim_blueprint(asset_path, full=False):
 
     ``full=False`` 返回紧凑摘要（给模型看），``full=True`` 返回完整结构。
     """
-    text = read_text(asset_path)
+    text, asset_path = read_cached(asset_path)
     if text is None:
         return {"error": "没有 %s 的 T3D 缓存。先调用 sync 收集。" % asset_path,
                 "_cache_miss": True, "asset": asset_path}
@@ -402,7 +454,7 @@ def generic_asset(asset_path, max_props=60):
     用于 Chooser / PoseSearch / 数据表这类没有专用读取器的资产——
     T3D 里它们同样是完整的（``ShouldPort`` 不按可编辑性过滤）。
     """
-    text = read_text(asset_path)
+    text, asset_path = read_cached(asset_path)
     if text is None:
         return {"error": "没有 %s 的 T3D 缓存。先调用 sync 收集。" % asset_path,
                 "_cache_miss": True, "asset": asset_path}
@@ -441,6 +493,33 @@ def generic_asset(asset_path, max_props=60):
     if detail:
         result["indexed_detail"] = detail
     return result
+
+
+def asset_summary(asset_path, max_props=60):
+    """任意资产的语义摘要（材质 / 贴图 / 网格 / 关卡 / 通用）。
+
+    这是"读取范围不止于蓝图与动画"的落点：T3D 导出对资产类型没有限制，
+    所以只要有缓存就能读。有专用摘要器的类走 :mod:`ue.asset_read` 的语义视图，
+    其余退到通用视图——**任何**资产都能读出点东西。
+
+    特例：``AnimMontage`` 与 ``AnimBlueprint`` 仍转给它们的专用读取器，
+    因为那两类的数据结构（Section/Notify 时间轴、状态机）比通用视图有用得多。
+    """
+    text, asset_path = read_cached(asset_path)
+    if text is None:
+        return {"error": "没有 %s 的 T3D 缓存。先调用 sync 收集。" % asset_path,
+                "_cache_miss": True, "asset": asset_path}
+
+    asset_read = pure.load()[4]
+    # 先探类名，决定是否转专用读取器
+    probe = asset_read.summarize(text, asset_path=asset_path,
+                                 max_props=max_props)
+    cls = probe.get("class")
+    if cls == "AnimMontage":
+        return montage_detail(asset_path)
+    if cls == "AnimBlueprint":
+        return anim_blueprint(asset_path)
+    return probe
 
 
 def find_animation_calls(asset_path):
@@ -587,7 +666,7 @@ def class_summary(asset_path):
     变量表必须走这条路：``UBlueprint::NewVariables`` 是裸 ``UPROPERTY()``，
     Python 反射会 PermissionDenied（同 ``UEdGraph::Nodes``）。
     """
-    text = read_text(asset_path)
+    text, asset_path = read_cached(asset_path)
     if text is None:
         return {"error": "没有 %s 的 T3D 缓存。先调用 sync 收集。" % asset_path,
                 "_cache_miss": True, "asset": asset_path}

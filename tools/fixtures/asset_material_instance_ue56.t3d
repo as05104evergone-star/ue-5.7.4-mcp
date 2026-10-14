@@ -1,0 +1,26 @@
+﻿Begin Object Class=/Script/Engine.MaterialInstanceConstant Name="MI_Concrete_Decorative_Wall_B" ExportPath="/Script/Engine.MaterialInstanceConstant'/Game/ComboMCP_Probe/MI_Concrete_Decorative_Wall_B.MI_Concrete_Decorative_Wall_B'"
+   Begin Object Class=/Script/Engine.MaterialInstanceEditorOnlyData Name="MI_Concrete_Decorative_Wall_BEditorOnlyData" ExportPath="/Script/Engine.MaterialInstanceEditorOnlyData'/Game/ComboMCP_Probe/MI_Concrete_Decorative_Wall_B.MI_Concrete_Decorative_Wall_B:MI_Concrete_Decorative_Wall_BEditorOnlyData'"
+   End Object
+   Begin Object Class=/Script/UnrealEd.SceneThumbnailInfoWithPrimitive Name="SceneThumbnailInfoWithPrimitive_0" ExportPath="/Script/UnrealEd.SceneThumbnailInfoWithPrimitive'/Game/ComboMCP_Probe/MI_Concrete_Decorative_Wall_B.MI_Concrete_Decorative_Wall_B:SceneThumbnailInfoWithPrimitive_0'"
+   End Object
+   Begin Object Name="MI_Concrete_Decorative_Wall_BEditorOnlyData" ExportPath="/Script/Engine.MaterialInstanceEditorOnlyData'/Game/ComboMCP_Probe/MI_Concrete_Decorative_Wall_B.MI_Concrete_Decorative_Wall_B:MI_Concrete_Decorative_Wall_BEditorOnlyData'"
+   End Object
+   Begin Object Name="SceneThumbnailInfoWithPrimitive_0" ExportPath="/Script/UnrealEd.SceneThumbnailInfoWithPrimitive'/Game/ComboMCP_Probe/MI_Concrete_Decorative_Wall_B.MI_Concrete_Decorative_Wall_B:SceneThumbnailInfoWithPrimitive_0'"
+   End Object
+   ParameterStateId=BE2335814C161D4257CB1189F561C154
+   ScalarParameterValues(0)=(ParameterInfo=(Name="AO contrast"),ParameterValue=0.200000,ExpressionGUID=AFA9C9484B4F75A5651E36B34D8F9D74)
+   ScalarParameterValues(1)=(ParameterInfo=(Name="RefractionDepthBias"))
+   TextureParameterValues(0)=(ParameterInfo=(Name="AOBaked"),ExpressionGUID=EB2F97354F62FD57915D29BCF03F6AA7)
+   BasePropertyOverrides=(OpacityMaskClipValue=0.333300)
+   ReferencedTextureGuids(0)=C05ADE9F45EE46E6A8C3289D67B3ECD5
+   ReferencedTextureGuids(1)=B3F2C82F499BB444DE9CAE80116B4217
+   ReferencedTextureGuids(2)=69FD36B446E63E279627D6B427173DBD
+   ReferencedTextureGuids(3)=6AC56DF44B3BE6B3527EA1A52CA2EA95
+   ReferencedTextureGuids(4)=2ABFC7434D90866FE40C2EAC1B0D0D73
+   ReferencedTextureGuids(5)=D9F5130C4154D174A4242D9D63186DD5
+   EditorOnlyData="/Script/Engine.MaterialInstanceEditorOnlyData'MI_Concrete_Decorative_Wall_BEditorOnlyData'"
+   TextureStreamingDataVersion=1
+   TextureStreamingData(0)=(SamplingScale=1.000000,UVChannelIndex=0,TextureName="T_Decorative_Wall_B_AO",TextureReference="/Game/Asset1/Asset/BrutalistLevelscapes/Textures/Baked_AO/T_Decorative_Wall_B_AO.T_Decorative_Wall_B_AO")
+   ThumbnailInfo="/Script/UnrealEd.SceneThumbnailInfoWithPrimitive'SceneThumbnailInfoWithPrimitive_0'"
+   LightingGuid=1C9EAA354DAEEFBD693DD8A5F4D28790
+End Object

@@ -14,14 +14,32 @@
 # 其中含有使用者本机项目的完整蓝图结构，尤其不该公开
 cache/
 
-# ---- 本机项目的分析笔记：只发布 dsh-setup.md ----
+# ---- 本机项目的分析笔记：不进仓库 ----
+#
+# 但 quickstart.md 必须进：它是 `help` 工具**运行时的数据源**，不是笔记。
+# 少了它，help 会返回「手册文件不存在」——这是功能，不是文档。
 docs/*.md
 !docs/dsh-setup.md
+!docs/quickstart.md
 
-# ---- 蓝图夹具：测试实际只依赖 real_bp_ue57*.t3d ----
+# ---- 蓝图夹具：作者项目的蓝图不进仓库 ----
+#
+# 两个例外，都是**必需的**，且都不含任何使用者项目的私有内容：
+#   * real_bp_ue57*.t3d      —— 5.7 蓝图夹具（test_t3d_real.py 依赖）
+#   * asset_*_ue56.t3d       —— 5.6 引擎内置资产 + 作者自建的探测工程导出，
+#                               用于 test_asset_read.py。材质那份里只有引擎内置
+#                               材质和一次性探测工程的资产，没有本机项目数据。
 tools/fixtures/*.t3d
 !tools/fixtures/real_bp_ue57.t3d
 !tools/fixtures/real_bp_ue57_default.t3d
+!tools/fixtures/asset_material_ue56.t3d
+!tools/fixtures/asset_material_instance_ue56.t3d
+!tools/fixtures/asset_material_project_ue56.t3d
+!tools/fixtures/asset_texture_ue56.t3d
+!tools/fixtures/asset_static_mesh_ue56.t3d
+!tools/fixtures/asset_skeletal_mesh_ue56.t3d
+!tools/fixtures/asset_world_ue56.t3d
+!tools/fixtures/asset_generic_font_ue56.t3d
 
 # ---- Python ----
 __pycache__/

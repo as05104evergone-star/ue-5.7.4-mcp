@@ -52,6 +52,17 @@ _RE_INDEXED_PROP = re.compile(r'^\s*([A-Za-z_][A-Za-z0-9_]*)\s*\(\s*(\d+)\s*\)\s
 # 结构体字段：Key=... （用于区分 `(Key=V,...)` 结构 与 `((...),(...))` 数组）
 _RE_STRUCT_FIELD = re.compile(r'^[A-Za-z_][A-Za-z0-9_]*\s*=')
 
+# 二进制载荷：``CustomProperties TextureSourceData PayloadSize=4096 0 0 0 ff ...``
+#
+# 贴图/网格/字体这类资产会把原始二进制**以十六进制文本**写进 T3D。实测一张 32×32
+# 的贴图就带 4KB 的 ``PayloadSize``，铺开是几百行十六进制。整棵对象树解析完之后，
+# 这些字节会跟着 props 一起进 JSON，把真正有用的字段淹掉（而且对读代码毫无价值）。
+#
+# 所以这里显式识别它：只记大小，值位置放一个人看得懂的标记。
+_RE_PAYLOAD = re.compile(
+    r'^\s*CustomProperties\s+([A-Za-z_][A-Za-z0-9_]*)\s+PayloadSize\s*=\s*(\d+)')
+_PAYLOAD_VALUE = "<payload: %d bytes>"
+
 # 引脚在 T3D 里可能出现几种形态，按可能性排序逐个匹配。
 #
 # 首选是 ``CustomProperties Pin (...)``：这是 UE 把引脚当作 tagged property
@@ -99,7 +110,14 @@ def _short_class(class_path):
 
 
 def _split_top_level(text, separator=","):
-    """按顶层分隔符切分，忽略括号内的分隔符。"""
+    """按顶层分隔符切分，忽略括号内的分隔符。
+
+    空片段被丢掉（``keep_empty`` 为假时）。这很重要：UE 的结构体文本**普遍带
+    尾逗号**（``(OpacityMaskClipValue=0.333300,)``），若把尾逗号切出来的空串
+    留给调用方，:func:`_parse_value` 的"所有片段都是 Key="判定就会失败，
+    整个结构体会静默退化成原始字符串——实测 5.6 的 ``BasePropertyOverrides``、
+    ``DefaultInstance`` 都踩了这个坑。
+    """
     parts, depth, current = [], 0, []
     in_string = False
     escaped = False
@@ -127,9 +145,8 @@ def _split_top_level(text, separator=","):
             current = []
         else:
             current.append(ch)
-    if current:
-        parts.append("".join(current))
-    return parts
+    parts.append("".join(current))
+    return [p for p in parts if p.strip()]
 
 
 def _find_balanced(text, start):
@@ -175,7 +192,7 @@ class T3DObject(object):
     """
 
     __slots__ = ("cls_path", "cls", "name", "props", "children", "pins",
-                 "parent", "order", "path", "indexed_props")
+                 "parent", "order", "path", "indexed_props", "payloads")
 
     def __init__(self, cls_path, name, path=None):
         self.cls_path = cls_path
@@ -189,6 +206,8 @@ class T3DObject(object):
         self.path = path or ""
         # 属性数组：key -> {index: 解析后的结构体/dict}
         self.indexed_props = {}
+        # 二进制载荷：属性名 -> 字节数（值本身不保留，见 _RE_PAYLOAD 的注释）
+        self.payloads = {}
 
     def indexed(self, key):
         """按出现顺序返回 ``Key(N)=(...)`` 的解析结果列表。"""
@@ -303,6 +322,9 @@ def parse(text, stats=None):
             if kind == "indexed":
                 if _finish_indexed(target, line):
                     continue
+            if kind == "payload":
+                if _finish_payload(target, line):
+                    continue
             _assign(target, line)
             continue
 
@@ -354,6 +376,13 @@ def parse(text, stats=None):
         if current is None:
             continue
 
+        # ---- 二进制载荷：只记大小，绝不把十六进制铺进结果
+        payload_match = _RE_PAYLOAD.match(line)
+        if payload_match:
+            _record_payload(current, payload_match.group(1),
+                            int(payload_match.group(2)))
+            continue
+
         # ---- 引脚（可能跨行）
         form_name, open_index = _match_pin_form(line)
         if form_name is not None:
@@ -385,19 +414,27 @@ def parse(text, stats=None):
                 pending = {"obj": current, "kind": "prop", "text": line}
                 current.props[key] = value
                 continue
-            current.props[key] = _strip_quotes(value)
+            # 走 _parse_value 而不是 _strip_quotes：结构体属性（``Source=(SizeX=32,...)``、
+            # ``BaseColor=(Constant=...,Expression=...)``）必须解析成 dict 才有用。
+            # 原先这里只做去引号，于是**所有**结构体属性都是原始字符串，读取方
+            # 只能靠自己再正则一遍——那正是"读不出材质输入图"的直接原因。
+            current.props[key] = _parse_value(value)
             continue
 
     return roots
 
 
 def _assign(obj, line):
-    """处理跨行属性的收尾赋值。"""
+    """处理跨行属性的收尾赋值。
+
+    与主循环里的普通属性分支保持一致的解析方式（见那里的注释）：
+    结构体要变成 dict，不能停在原始字符串。
+    """
     assign = _RE_ASSIGN.match(line)
     if not assign:
         return
     key, value = assign.group(1), assign.group(2).strip()
-    obj.props[key] = _strip_quotes(value)
+    obj.props[key] = _parse_value(value)
 
 
 # ====================================================================== 结构体
@@ -421,7 +458,11 @@ def _parse_value(value):
         return {}
 
     parts = [p for p in _split_top_level(inner, ",") if p.strip()]
-    if parts and all(_RE_STRUCT_FIELD.match(p.strip()) for p in parts):
+    # 注意：``any`` 而不是 ``all``。跨行属性在 :func:`parse` 里是被**空格拼接**的，
+    # 于是续行会带上原始缩进——``AggGeom=(BoxElems=((...)) [换行+缩进] ConvexElems=(...))``
+    # 拼完是 ``BoxElems=((...)) ConvexElems=(...)``，第一段不以 ``Key=`` 开头。
+    # 用 ``all`` 会把这种结构体静默判成数组（实测 5.6 的 ``AggGeom`` 就是这样）。
+    if parts and any(_RE_STRUCT_FIELD.match(p.strip()) for p in parts):
         return _parse_struct(inner)
     return [_parse_value(p) for p in parts]
 
@@ -439,6 +480,25 @@ def _parse_struct(content):
             continue
         out[key] = _parse_value(value)
     return out
+
+
+def _record_payload(obj, name, size):
+    """记下一个二进制载荷：只保留名字与字节数，值位置放可读标记。"""
+    obj.payloads[name] = size
+    obj.props[name] = _PAYLOAD_VALUE % size
+
+
+def _finish_payload(obj, text):
+    """从跨行的载荷行里取出名字与大小。
+
+    跨行时 ``pending["text"]`` 已经把后续十六进制都拼进来了；这里只需要开头那段，
+    所以用 ``search`` 而不是 ``match``。
+    """
+    match = _RE_PAYLOAD.search(text)
+    if not match:
+        return False
+    _record_payload(obj, match.group(1), int(match.group(2)))
+    return True
 
 
 def _finish_indexed(obj, text):
@@ -467,6 +527,20 @@ _RE_DOUBLE_QUOTED = re.compile(r'"([^"]*)"')
 
 
 def _member_name(value):
+    """从成员引用里取 ``MemberName``。
+
+    属性值现在可能是解析后的 dict（``EventReference=(MemberParent=...,MemberName="X")``
+    —— 见 ``_parse_value``），所以**先认 dict**。把它 ``str()`` 再正则是不行的：
+    Python 的 repr 给键加单引号，而 :data:`_RE_MEMBER_NAME` 只匹配双引号，
+    结果会静默返回 None（这正是"事件名读成 ?"的原因）。
+    """
+    if value is None:
+        return None
+    if isinstance(value, dict):
+        name = value.get("MemberName")
+        return str(name) if name else None
+    if not isinstance(value, str):
+        value = str(value)
     if not value:
         return None
     match = _RE_MEMBER_NAME.search(value)
@@ -489,10 +563,13 @@ def _object_short_name(value):
 
     规则：先取引号里的那段路径（单引号优先，因为外层路径常被双引号包着），
     再取冒号之后、最后一个点之后的部分。
+
+    入参可能是解析后的 dict（结构体属性走 ``_parse_value``），所以先归一化。
     """
     if not value:
         return None
-    text = value.strip()
+    text = value if isinstance(value, str) else str(value)
+    text = text.strip()
 
     match = _RE_SINGLE_QUOTED.search(text) or _RE_DOUBLE_QUOTED.search(text)
     if match:
@@ -513,6 +590,15 @@ _obj_name_from_path = _object_short_name
 
 
 def _member_parent(value):
+    """取成员引用里的 ``MemberParent``（"这个函数属于哪个类"）。
+
+    结构体属性现在是 dict，所以必须先认 dict：直接把整个 dict 丢给
+    :func:`_object_short_name`，字符串化之后**最后一个点号后的片段**可能是
+    ``MemberName`` 而不是类名——实测就是这样读出了 ``fn_class: 'MemberParent'``。
+    """
+    if isinstance(value, dict):
+        parent = value.get("MemberParent")
+        return _object_short_name(parent) if parent else None
     return _object_short_name(value)
 
 
@@ -558,7 +644,8 @@ def t3d_object_semantics(obj):
     if cls == "DynamicCast":
         target = props.get("TargetType")
         if target:
-            meta["cast_to"] = target.rsplit(".", 1)[-1].rstrip("'\"")
+            text = target if isinstance(target, str) else str(target)
+            meta["cast_to"] = text.rsplit(".", 1)[-1].rstrip("'\"")
         if props.get("bIsPureCast") in ("True", "true", "1"):
             meta["pure"] = True
 

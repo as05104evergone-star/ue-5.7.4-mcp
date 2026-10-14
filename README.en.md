@@ -1,17 +1,21 @@
-﻿# ComboMCP
+# ComboMCP
 
-**Read Unreal Engine blueprints and animation assets into compact text an AI can actually reason about.**
+**Read Unreal Engine assets into compact text an AI can actually reason about.**
 
 **English** | [中文](README.md)
 
-A read-only MCP server that exports blueprint graphs, montage timing and AnimBP state
-machines into offline-parseable T3D text — so a model can answer questions like *"why
-won't my combo chain continue?"* or *"what does this graph actually do?"* with
-**evidence** instead of guesswork.
+An MCP server that exports blueprint graphs, montage timing, AnimBP state machines and
+**materials / textures / meshes / levels** into offline-parseable T3D text — so a model can
+answer questions like *"why won't my combo chain continue?"*, *"what does this graph
+actually do?"* or *"where does this material's roughness come from?"* with **evidence**.
 
-> **It modifies nothing.** No asset writes, no compilation, no saving, no node creation.
-> There is no `set_editor_property` / `save_asset` / `compile_blueprint` call anywhere
-> in the implementation.
+It also handles **basic operations**: read logs, inspect levels, drive PIE, load and save
+levels. Those run in the editor process, and **write actions are off by default** — see
+[Safety boundary](#safety-boundary).
+
+> **Reading tools are read-only.** No asset writes, no compilation, no saving, no node
+> creation. The only things that change state are 7 explicitly authorised editor actions,
+> and they are blocked by default.
 
 ---
 
@@ -19,23 +23,28 @@ won't my combo chain continue?"* or *"what does this graph actually do?"* with
 
 | Component | Status |
 |---|---|
-| **Unreal Engine 5.7.4** | ✅ **Tested** — every result in this project came from 5.7.4 |
-| UE 5.0 – 5.6 | ⚠️ **Untested.** The APIs it relies on (`ToolMenuEntryScript`, `PluginBlueprintLibrary`, `unreal.uclass`) all landed in UE 5.0, so it should work — but T3D export details can shift between minor versions |
+| **Unreal Engine 5.7.4** | ✅ **Tested** |
+| **Unreal Engine 5.6.1** | ✅ **Tested** in a freshly created, isolated verification project: plugin load, T3D export of eight asset classes, `sync` collection, offline `asset` reads, log reading, write-action gating |
+| UE 5.0 – 5.5 | ⚠️ **Untested.** The APIs it relies on (`ToolMenuEntryScript`, `PluginBlueprintLibrary`, `unreal.uclass`, `get_editor_subsystem`) all landed in UE 5.0, so it should work |
 | UE 4.x | ❌ **Unsupported.** Different menu API and different pin serialization format |
 | **Windows** | ✅ **Tested.** The `.cmd` scripts and engine path resolution are verified on Windows |
 | Linux / macOS | ⚠️ **Untested.** The Python side now derives engine paths per platform (no hardcoded `Win64`), but the `.cmd` scripts have no equivalent — run the commands by hand |
 | **DeepSeek Harness** | ✅ **Tested** |
 | Other MCP clients | ⚠️ **Untested.** The wire protocol is standard MCP stdio (JSON-RPC 2.0) and it advertises `2025-06-18` / `2025-03-26` / `2024-11-05`; the config shape is identical for Claude Desktop / Cursor / Cline, but it has not been run outside DSH |
 
-**It does NOT need**: Node.js, a system Python, a compiler toolchain, a C++ plugin,
-the Remote Execution setting, or any third-party Python package.
+**Multiple engine versions need no environment variable.** The plugin picks the engine from
+**the project's own `.uproject` `EngineAssociation`**: a 5.6 project is collected with the
+5.6 `UnrealEditor-Cmd`, a 5.7 project with 5.7. `status` reports what it resolved
+(`project_association` / `engine_root` / `engine_version`).
+
+**It does NOT need**: Node.js, a system Python, a compiler toolchain, a C++ plugin, or any
+third-party Python package.
 
 **It DOES need**: the Python bundled with UE (`Engine/Binaries/ThirdParty/Python3/`,
 shipped with every UE 5.x).
 
-> **In one line**: **UE 5.7.4 + Windows + DSH is the only fully verified combination.**
-> Other combinations will most likely work, but test them yourself — the T3D parser in
-> particular is sensitive to engine export format.
+Editor actions (level / PIE / actor) additionally need Remote Execution enabled — that
+setting is off by default, see [Safety boundary](#safety-boundary).
 
 ---
 
@@ -50,7 +59,7 @@ Data read live via `gh api` on 2026-09-28, not estimated:
 | [cutehusky/ue5-mcp](https://github.com/cutehusky/ue5-mcp) | 13 | C++ plugin exposing a web API + FastMCP | Yes | Yes | Yes |
 | [Cawb07/ue5-mcp](https://github.com/Cawb07/ue5-mcp) | 1 | C++ | Yes | Yes | Yes |
 | Epic's official Unreal MCP | — | Built into the engine | No | Yes | Yes |
-| **ComboMCP** | — | **Pure Python, `"Modules": []`** | **No** | **No** | **No (deliberately read-only)** |
+| **ComboMCP** | — | **Pure Python, `"Modules": []`** | **No** | **No** | **Reads never write; 7 opt-in editor actions** |
 
 > Epic's official Unreal MCP only exists from **UE 5.8**. Verified on 5.7.4: there is no
 > MCP-related plugin anywhere in the engine's plugin directory.
@@ -151,14 +160,14 @@ For DeepSeek Harness, mounting goes through the Cordis layer — see
 
 ## Usage
 
-### Tools (21, four of which need the optional KBaseUE)
+### Tools (24, four of which need the optional KBaseUE)
 
 The tool surface is deliberately small: tool definitions go into **every** model request.
 
 | Tool | Purpose |
 |---|---|
-| `status` | Engine / index / cache status. Call this first on any connection error |
-| `sync` | Export assets into the T3D cache (headless commandlet) |
+| `status` | Engine / index / cache / write-policy status. Call this first on any connection error |
+| `sync` | Export assets into the T3D cache (headless commandlet). **Omitting `classes` means all assets** |
 | `project_map` | Asset map: counts by class, plus blueprint list |
 | `search` | Find assets by name |
 | `find_refs` | Asset references / dependencies |
@@ -174,6 +183,34 @@ The tool surface is deliberately small: tool definitions go into **every** model
 | `audit` | Node liveness analysis (needs real links; uses T3D by default) |
 | `reflect` | Fallback: see what engine reflection actually exposes |
 | `pie_state` | **Runtime state**: read the live PIE world (editor must be playing) |
+| **`asset`** | **Read any asset**: materials / material instances / textures / static meshes / skeletal meshes / levels / anything else |
+| **`help`** | **Basic-operations Q&A**: 10 topics, accepts natural-language queries |
+| **`editor`** | **Editor actions**: `capabilities` / `pie` / `level` / `actor` / `logs` |
+
+#### What the three new tools answer
+
+**`asset`** — the reading range is no longer limited to blueprints and animation. It picks
+a semantic summariser per class:
+
+| Asset class | What you get |
+|---|---|
+| `Material` | Blend / shading model, **whether each input is a constant or which expression it is wired to**, declared parameters with defaults, expression breakdown |
+| `MaterialInstanceConstant` | Parent material, parameter overrides, property overrides |
+| `Texture2D` | Size, mips, source format, compression, sRGB, LODGroup |
+| `StaticMesh` | Material slots and names, bounds, collision type and profile, lightmap settings |
+| `SkeletalMesh` | Skeleton, material slots |
+| `World` (level) | Loaded levels, World Partition config, whether the level is partitioned |
+| Anything else | Generic view: readable properties (export noise stripped) + child-class histogram |
+
+**What it cannot read is stated explicitly**: mesh vertices, texture pixels, and the
+per-actor serialization of a level. The tool never returns a silent empty value that would
+make you think the asset is empty.
+
+**`help`** — topics: `install` `menu` `sync` `pie` `level` `logs` `remoteexec` `actions`
+`readorder` `troubleshoot`. Ask "how do I open PIE" or "where are the logs" directly.
+
+**`editor`** — editor actions. Write actions are off by default, see
+[Safety boundary](#safety-boundary).
 
 #### Optional: the knowledge-base four (requires a sibling `KBaseUE` plugin)
 
@@ -188,7 +225,7 @@ They depend on `Plugins/KBaseUE`, which is **not part of this repository**.
 | `interface_check` | On a real interface asset: does this function become an **event** or a **function graph**? |
 
 **Without KBaseUE they return `{"error": "KBaseUE module not found", ...}` — that is
-degradation, not a crash.** The other 17 core tools keep working and the protocol layer is
+degradation, not a crash.** The other 20 core tools keep working and the protocol layer is
 unaffected (`tools/mcp_protocol_test.py` section 9 verifies exactly this).
 
 ### Recommended read order (coarse to fine)
@@ -320,17 +357,31 @@ Plugins/ComboMCP/
 
 ## Tests
 
-**No editor required** (201 assertions total):
+**No editor required** (342 assertions total):
 
 ```powershell
 $py = "<Engine>\Engine\Binaries\ThirdParty\Python3\Win64\python.exe"
 $root = "<Project>\Plugins\ComboMCP"
 
-& $py "$root\tools\test_t3d.py"           # 60
-& $py "$root\tools\test_t3d_real.py"      # 54
-& $py "$root\tools\test_wiring.py"        # 44
-& $py "$root\tools\mcp_protocol_test.py"  # 20
+& $py "$root\tools\test_t3d.py"             # 60
+& $py "$root\tools\test_t3d_real.py"        # 54
+& $py "$root\tools\test_wiring.py"          # 48
+& $py "$root\tools\mcp_protocol_test.py"    # 41
+& $py "$root\tools\test_asset_read.py"      # 73
+& $py "$root\tools\test_editor_actions.py"  # 66
 ```
+
+The two new suites are worth explaining, because their whole value is in using real things:
+
+- **`test_asset_read.py`** fixtures are T3D exported from **a real UE 5.6.1 run**
+  (material / material instance / texture / static mesh / skeletal mesh / level / font).
+  The worst 1.3.0 defects — material data living on a `MaterialEditorOnlyData` child,
+  hex payloads in textures, trailing commas in structs — **cannot be caught by synthetic
+  samples at all**.
+- **`test_editor_actions.py`** uses a **fake `unreal` module** (exposing no editor
+  subsystem) to verify commandlet isolation: every action must return `_need_editor`
+  instead of trying — because trying was measured to kill the process with
+  `EXCEPTION_ACCESS_VIOLATION`.
 
 **Needs the engine, but not a running editor** (plugin acceptance):
 
@@ -392,16 +443,57 @@ version drift.
 
 ---
 
-## Read-only guarantee
+## Safety boundary
 
-It isn't "tries not to write" — it **structurally cannot**:
+**Reading tools are read-only.** No writes, no compilation, no saving, no asset creation.
+T3D export goes through `ObjectExporterT3D`, pure serialization; the commandlet only calls
+`unreal.load_asset()` and the exporter.
 
-- No `set_editor_property` / `save_asset` / `compile_blueprint` / `spawn_actor` anywhere
-- T3D export goes through `ObjectExporterT3D`, pure serialization
-- The commandlet only calls `unreal.load_asset()` and the exporter
+**Only 7 write actions exist, and they are off by default:**
 
-How to verify it yourself: run `sync`, then check whether any file under `Content/` has a
-modification time later than when the collection started.
+| Write action | What it does |
+|---|---|
+| `editor action=pie sub=start` / `stop` / `simulate` | Enter / leave PIE |
+| `editor action=level sub=load` / `new` / `save` / `add` | Load / create / save a level, add a sublevel |
+
+Enable them either way:
+
+- **Environment variable** (persistent): set `COMBO_ALLOW_ACTIONS=1`, then restart the MCP
+  client (the MCP server is a subprocess; it reads the variable at startup).
+- **Single call**: pass `confirm=true`.
+
+When not authorised they return a payload tagged `_actions_blocked` instead of failing
+silently.
+
+**Two gates, not one check.** The MCP side (`engine/actions.py`) stops accidental model
+calls; the editor side (`ue/editor_actions.py::_guard_write`) stops commands sent straight
+into the editor over Remote Execution, bypassing MCP. The second gate is necessary —
+that channel is open by design, so the outer layer alone does not count.
+
+**Deliberately not supported** (not "not yet", but by design):
+
+- **Running arbitrary console commands.** That hands over the whole engine console.
+- **Saving arbitrary assets.** Only the explicit `level sub=save`, which saves the current
+  level and needs authorisation.
+- **Creating / modifying / deleting assets.**
+
+### How to verify reading really writes nothing
+
+Run `sync`, then check whether any file under `Content/` has a modification time later
+than when the collection started.
+
+### Editor actions need Remote Execution enabled
+
+Level / PIE / actor actions must run **inside the editor process**, over UE's Python Remote
+Execution channel. That channel is **off by default**:
+
+1. In the editor: **Project Settings → Plugins → Python → Enable Remote Execution?**
+2. It takes effect immediately, no restart needed.
+3. Confirm `bridge.connected` is `true` via `status`.
+
+The setting has no command-line flag and no console command — which is exactly why this
+plugin **does not make Remote Execution its main reading path**. Asset reading runs off the
+T3D cache. **`logs` doesn't need it either**: it reads the log files from disk.
 
 ---
 

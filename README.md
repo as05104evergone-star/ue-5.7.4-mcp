@@ -1,15 +1,18 @@
 # ComboMCP
 
-**把 Unreal Engine 的蓝图与动画资产，读成 AI 能真正理解的紧凑文本。**
+**把 Unreal Engine 的资产，读成 AI 能真正理解的紧凑文本。**
 
 [English](README.en.md) | **中文**
 
-一个只读的 MCP 服务：把蓝图图结构、Montage 时序、AnimBP 状态机导出成可离线解析的
-T3D 文本，让模型能回答"为什么连招接不上""这段逻辑到底怎么走"这类问题——并且给出
-**带证据**的答案，而不是泛泛而谈。
+一个 MCP 服务：把蓝图图结构、Montage 时序、AnimBP 状态机、**材质/贴图/网格/关卡**
+导出成可离线解析的 T3D 文本，让模型能回答"为什么连招接不上""这段逻辑到底怎么走"
+"这个材质的粗糙度是从哪来的"这类问题——并且给出**带证据**的答案。
 
-> **它不修改任何东西。** 不写入资产、不编译、不保存、不创建蓝图节点。
-> 全部实现里不存在 `set_editor_property` / `save_asset` / `compile_blueprint` 这类调用。
+它还能做**基础操作**：读日志、查关卡、控制 PIE、开关卡。这类动作走编辑器进程，
+**写操作默认关闭**，见下面的[安全边界](#安全边界)。
+
+> **读取类工具只读。** 不写资产、不编译、不保存、不创建节点。
+> 唯一会改状态的是显式授权的编辑器动作（7 个），且默认被挡住。
 
 ---
 
@@ -17,21 +20,26 @@ T3D 文本，让模型能回答"为什么连招接不上""这段逻辑到底怎�
 
 | 组件 | 状态 |
 |---|---|
-| **Unreal Engine 5.7.4** | ✅ **实测**（本项目的全部结论都来自 5.7.4） |
-| UE 5.0 – 5.6 | ⚠️ **未实测**。所依赖的 API（`ToolMenuEntryScript`、`PluginBlueprintLibrary`、`unreal.uclass`）都是 UE 5.0+ 引入，理论可用；但 T3D 导出细节可能随小版本变化 |
+| **Unreal Engine 5.7.4** | ✅ **实测** |
+| **Unreal Engine 5.6.1** | ✅ **实测**（在一个新建的隔离验证项目上跑通：插件加载、八类资产 T3D 导出、`sync` 采集、`asset` 离线读取、日志读取、写操作授权门） |
+| UE 5.0 – 5.5 | ⚠️ **未实测**。所依赖的 API（`ToolMenuEntryScript`、`PluginBlueprintLibrary`、`unreal.uclass`、`get_editor_subsystem`）都是 UE 5.0+ 引入，理论可用 |
 | UE 4.x | ❌ **不支持**。菜单 API 与引脚序列化格式都不同 |
 | **Windows** | ✅ **实测**。`.cmd` 脚本与引擎路径推导都按 Windows 验证过 |
 | Linux / macOS | ⚠️ **未实测**。Python 侧已改为按平台推导引擎路径（不再写死 `Win64`），但 `.cmd` 脚本需你自行执行等价命令 |
 | **DeepSeek Harness** | ✅ **实测** |
 | 其他 MCP 客户端 | ⚠️ **未实测**。协议是标准 MCP stdio（JSON-RPC 2.0），声明支持 `2025-06-18` / `2025-03-26` / `2024-11-05`；Claude Desktop / Cursor / Cline 等的配置结构相同，但没在 DSH 之外跑过 |
 
-**它不需要**：Node.js、系统 Python、编译工具链、C++ 插件、Remote Execution 开关、
-任何第三方 Python 包。
+**多引擎混装不用配环境变量。** 插件按**项目自己的 `.uproject` 里的
+`EngineAssociation`** 决定用哪个引擎：5.6 的项目用 5.6 的 `UnrealEditor-Cmd`
+去采集，5.7 的项目用 5.7。`status` 会回报解析结果（`project_association` /
+`engine_root` / `engine_version`），方便你确认没搞错。
+
+**它不需要**：Node.js、系统 Python、编译工具链、C++ 插件、任何第三方 Python 包。
 
 **它需要**：UE 自带的 Python（`Engine/Binaries/ThirdParty/Python3/`，UE 5.x 都自带）。
 
-> **一句话**：**UE 5.7.4 + Windows + DSH 是目前唯一被完整验证的组合。**
-> 其他组合大概率可用，但请自测——尤其是 T3D 解析器，它对引擎导出格式敏感。
+编辑器动作（关卡 / PIE / Actor）另需开启 Remote Execution——该开关默认关闭，
+见 [远程执行开关](#编辑器动作需要打开-remote-execution)。
 
 ---
 
@@ -66,7 +74,7 @@ T3D 文本，让模型能回答"为什么连招接不上""这段逻辑到底怎�
   或 [mirno-ehf/ue5-mcp](https://github.com/mirno-ehf/ue5-mcp)——它们能建节点、连线、改默认值。
   本插件**没有**这个能力，也不打算有。
 * **你需要覆盖 5.6 或 5.8。** ZiggyMar 明确支持 5.6/5.8；本插件只在 **5.7.4** 上实测过。
-* **你需要大量现成工具。** ZiggyMar 有 101 个工具，本插件 21 个（刻意的：工具定义会进入
+* **你需要大量现成工具。** ZiggyMar 有 101 个工具，本插件 24 个（刻意的：工具定义会进入
   每一次模型请求）。
 
 关键决策是**不把 Remote Execution 当主路径**：那个开关（`bRemoteExecution`）默认关闭，
@@ -102,16 +110,22 @@ T3D 文本，让模型能回答"为什么连招接不上""这段逻辑到底怎�
 它让 PythonScriptPlugin **自动启用**——所以**不需要** `-EnablePlugins=PythonScriptPlugin`，
 也不需要在编辑器里勾任何选项。
 
-### 3. 采集蓝图缓存
+### 3. 采集资产缓存
 
 读取的主力是本地 T3D 缓存。在 MCP 客户端里调用 `sync` 工具，给一个 `scope`：
 
 ```json
-{ "scope": "/Game", "classes": ["Blueprint", "AnimMontage"], "limit": 200 }
+{ "scope": "/Game", "limit": 200 }
 ```
+
+**不传 `classes` 就是全部资产**（蓝图 / 动画 / 材质 / 贴图 / 网格 / 关卡都包含）。
+要缩小范围再传，例如 `"classes": ["Blueprint", "Material", "Texture2D"]`。
 
 它会以 `UnrealEditor-Cmd -run=PythonScript` **另起一个进程**完成导出——
 **编辑器开着也能跑**，两者互不干扰（实测：编辑器与 commandlet 两个实例并存）。
+
+> 新建项目里资产注册表缓存可能还没建立，`list_assets` 会返回空。这种情况插件会
+> **退回扫 `Content/` 目录**发现资产，并在结果里说明走了哪条路（`discovered_via`）。
 
 ### 4. 接进 MCP 客户端
 
@@ -137,14 +151,14 @@ DeepSeek Harness 用 Cordis 层挂载，见 [`docs/dsh-setup.md`](docs/dsh-setup
 
 ## 用法
 
-### 工具清单（21 个，其中 4 个需要可选的 KBaseUE）
+### 工具清单（24 个，其中 4 个需要可选的 KBaseUE）
 
 工具面刻意精简：工具定义会进入**每一次**模型请求。
 
 | 工具 | 用途 |
 |---|---|
-| `status` | 引擎 / 索引 / 缓存状态。任何连接类报错先调它 |
-| `sync` | 采集资产到 T3D 缓存（走 headless commandlet） |
+| `status` | 引擎 / 索引 / 缓存 / 写策略状态。任何连接类报错先调它 |
+| `sync` | 采集资产到 T3D 缓存（走 headless commandlet）。**不传 `classes` 就是全部资产** |
 | `project_map` | 项目资产地图：按类统计并列出蓝图 |
 | `search` | 按名字找资产 |
 | `find_refs` | 资产的引用 / 依赖关系 |
@@ -160,6 +174,31 @@ DeepSeek Harness 用 Cordis 层挂载，见 [`docs/dsh-setup.md`](docs/dsh-setup
 | `audit` | 节点判活分析（需要真实连线，默认走 T3D） |
 | `reflect` | 兜底：直接看引擎反射暴露了什么 |
 | `pie_state` | **运行时状态**：读正在跑的 PIE 世界（需编辑器在 Play） |
+| **`asset`** | **读任意资产**：材质 / 材质实例 / 贴图 / 静态网格 / 骨骼网格 / 关卡 / 其它任何类 |
+| **`help`** | **基础操作答疑**：10 个主题，支持中英混合的自然语言查询 |
+| **`editor`** | **编辑器动作**：`capabilities` / `pie` / `level` / `actor` / `logs` |
+
+#### 三个新工具能回答什么
+
+**`asset`** —— 读取范围不再限于蓝图与动画。按类自动换摘要器：
+
+| 资产类 | 读得到 |
+|---|---|
+| `Material` | 混合 / 着色模型、**每个输入是常量还是连着哪个表达式**、声明的参数及默认值、表达式构成 |
+| `MaterialInstanceConstant` | 父材质、参数覆盖、属性覆盖 |
+| `Texture2D` | 尺寸、Mip、源格式、压缩设置、sRGB、LODGroup |
+| `StaticMesh` | 材质槽与槽名、包围盒、碰撞类型与预设、Lightmap 设置 |
+| `SkeletalMesh` | 骨架、材质槽 |
+| `World`（关卡） | 已加载关卡、World Partition 配置、是否分区关卡 |
+| 其它任何类 | 通用视图：有效属性（已剔除导出噪音）+ 子对象类名直方图 |
+
+**读不到的东西会明说**：网格顶点、贴图像素、关卡里 Actor 的逐个序列化。
+工具不会给一个空值让你误以为"这个资产是空的"。
+
+**`help`** —— 主题：`install` `menu` `sync` `pie` `level` `logs` `remoteexec`
+`actions` `readorder` `troubleshoot`。可以直接问"怎么装插件""菜单在哪""日志怎么看"。
+
+**`editor`** —— 编辑器动作。写操作默认关闭，见[安全边界](#安全边界)。
 
 #### 可选：知识库四件套（需要同级的 `KBaseUE` 插件）
 
@@ -174,17 +213,21 @@ DeepSeek Harness 用 Cordis 层挂载，见 [`docs/dsh-setup.md`](docs/dsh-setup
 | `interface_check` | 具体蓝图接口资产上验证：这个函数会做成**事件**还是**函数图** |
 
 **没有 KBaseUE 时它们会返回 `{"error": "KBaseUE module not found", ...}`——**
-那是**降级，不是崩溃**，其余 17 个工具照常工作，协议层不受影响
+那是**降级，不是崩溃**，其余 20 个工具照常工作，协议层不受影响
 （`tools/mcp_protocol_test.py` 第 9 节专门验证这一点）。
 
 ### 推荐读取顺序（由粗到细，避免一次拉爆上下文）
 
-1. `status` — 确认通道与索引状态
+1. `status` — 确认引擎、通道、索引与写策略状态
 2. `project_map` — 建立整体认知
-3. `class_summary` — 看某个类里有什么
-4. `graph_overview` — 看某个图有哪些节点、入口在哪
-5. `flow`（`format=dsl`）— 读执行逻辑
-6. `node_detail` — 只在已定位到具体节点时用
+3. `asset` — **读单个资产**。这是现在读任意资产的入口：材质 / 材质实例 / 贴图 /
+   静态网格 / 骨骼网格 / 关卡 / 数据表 / Chooser / PoseSearch / 蓝图……同一个工具
+   按类自动换摘要器
+4. 蓝图往下钻：`class_summary` → `graph_overview` → `flow`（`format=dsl`）
+   → 只在定位到具体节点时才用 `node_detail`
+5. 动画：`montage`（时序）、`anim_asset`（AnimBP 状态机 / 序列 / 混合空间）、
+   `anim_calls`（蓝图里所有 Montage 调用）
+6. `diagnose` — 连招系统综合体检
 
 ### 两条取数路径
 
@@ -293,16 +336,20 @@ Plugins/ComboMCP/
 │   ├── graph_ir.py         【纯数据】IR 定义 + 执行流遍历 + DSL 渲染
 │   ├── montage_t3d.py      【纯数据】Montage 时间轴与窗口诊断
 │   ├── anim_bp_t3d.py      【纯数据】AnimBP 状态机读取
+│   ├── asset_read.py       【纯数据】任意资产的语义摘要（材质/贴图/网格/关卡/通用）
 │   ├── runtime.py          防御性反射读取
 │   ├── t3d_read.py         T3D 导出与读取（UE 侧）
 │   ├── domain.py           连招领域诊断规则
+│   ├── editor_actions.py   编辑器动作：PIE / 关卡 / Actor（**唯一会改状态的模块**）
 │   ├── pie_state.py        PIE 运行时状态读取（唯一需要 game world 的模块）
 │   └── dispatch.py         命令分发 + 自动择路
 ├── engine/                 MCP 侧（普通 Python 进程）
 │   ├── offline.py          离线读取：缓存命中时的全部实现
-│   ├── collector.py        commandlet 采集器
-│   ├── bridge.py           Remote Execution 桥接（可选路径）
+│   ├── collector.py        commandlet 采集器（含资产注册表为空时的扫盘兜底）
+│   ├── bridge.py           Remote Execution 桥接（可选路径）+ 按 .uproject 选引擎
 │   ├── pure.py             把纯数据模块装进 MCP 进程
+│   ├── actions.py          写操作授权门（默认关闭）
+│   ├── logs.py             日志文件读取（不需要编辑器）
 │   └── search.py           索引磁盘缓存
 ├── mcpserver/              MCP 协议层（零依赖）
 │   ├── server.py           JSON-RPC over stdio
@@ -312,6 +359,7 @@ Plugins/ComboMCP/
 │   └── ue57-knowledge-base/  知识库四件套的使用契约：先取 file:line 再下结论
 ├── cache/                  生成物：T3D 缓存（**不入库**，可随时删）
 └── docs/
+    └── quickstart.md       操作手册 —— `help` 工具的数据源（按 ## 小节切分）
 ```
 
 ### `tools/` 里哪些是通用的
@@ -320,8 +368,10 @@ Plugins/ComboMCP/
 |---|---|---|
 | `test_t3d.py`（60 项） | ✅ | 解析器单测，用合成样本 |
 | `test_t3d_real.py`（54 项） | ✅ | 真实引擎导出回归，夹具随仓库提供 |
-| `test_wiring.py`（46 项） | ✅ | 模块装载 + 命令表接线 |
+| `test_wiring.py`（48 项） | ✅ | 模块装载 + 命令表接线 |
 | `mcp_protocol_test.py`（41 项） | ✅ | MCP 协议端到端。含 stdio 编码回归（**故意不设** `PYTHONIOENCODING`）与"可选依赖缺失时降级"两节 |
+| `test_asset_read.py`（73 项） | ✅ | 资产摘要器回归，夹具是 **UE 5.6.1 真实导出**的 T3D（材质/材质实例/贴图/网格/关卡/字体） |
+| `test_editor_actions.py`（66 项） | ✅ | commandlet 隔离（用假 unreal）、写操作授权门、日志解析。**不需要编辑器** |
 | `mcp_probe.py` | ✅ | 绕开 MCP 客户端直接走 stdio 协议，拿原始响应与 `error.data` 里的 traceback。客户端只给一句 `internal error` 时用它 |
 | `probe_plugin_load.py` | ✅ | 插件验收：是否被引擎计入启用列表、菜单 API 是否可用 |
 | `probe_remote.py` | ✅ | Remote Execution 通道探测 |
@@ -337,17 +387,29 @@ Plugins/ComboMCP/
 
 ## 测试与验证
 
-**不需要编辑器**（共 201 项断言）：
+**不需要编辑器**（共 342 项断言）：
 
 ```powershell
 $py = "<引擎>\Engine\Binaries\ThirdParty\Python3\Win64\python.exe"
 $root = "<项目>\Plugins\ComboMCP"
 
-& $py "$root\tools\test_t3d.py"           # 60 项
-& $py "$root\tools\test_t3d_real.py"      # 54 项
-& $py "$root\tools\test_wiring.py"        # 46 项
-& $py "$root\tools\mcp_protocol_test.py"  # 41 项
+& $py "$root\tools\test_t3d.py"             # 60 项
+& $py "$root\tools\test_t3d_real.py"        # 54 项
+& $py "$root\tools\test_wiring.py"          # 48 项
+& $py "$root\tools\mcp_protocol_test.py"    # 41 项
+& $py "$root\tools\test_asset_read.py"      # 73 项
+& $py "$root\tools\test_editor_actions.py"  # 66 项
 ```
+
+两组新测试的夹具与手段值得说明，因为它们的价值全在"用真东西"上：
+
+- **`test_asset_read.py`** 的夹具是 **UE 5.6.1 真实导出**的 T3D（材质 / 材质实例 /
+  贴图 / 静态网格 / 骨骼网格 / 关卡 / 字体）。1.3.0 修的几条最要命的缺陷
+  ——材质数据挂在 `MaterialEditorOnlyData` 子对象上、贴图十六进制载荷、
+  结构体尾逗号——**合成样本一条都测不出来**。
+- **`test_editor_actions.py`** 用一个**假的 `unreal` 模块**（不提供任何编辑器子系统）
+  来验证 commandlet 隔离：这种情况下每个动作都必须返回 `_need_editor`，
+  而不是去试——因为实测"去试"会让进程以 `EXCEPTION_ACCESS_VIOLATION` 崩掉。
 
 **需要引擎、但不需要编辑器在运行**（插件验收）：
 
@@ -403,17 +465,82 @@ Remote Execution（见下条）。
 哪些属性名。这是设计时就预期的：`UEdGraphPin` 从 struct 改成 UObject 就是一次破坏性
 变更，写死的读取代码在版本漂移时必然静默出错。
 
+**结果里出现 `<payload: N bytes>`**
+
+那是二进制载荷（贴图像素、网格 BulkData）的占位标记。工具**刻意不展开**它：
+一张 32×32 的贴图就有 4KB 十六进制，铺开会把有用的字段淹掉。
+
+**`editor` 动作返回 `_need_editor`**
+
+说明命令没跑在编辑器进程里，或者编辑器没开 / Remote Execution 没打开。
+
+这类动作有一条硬约束：**在 commandlet 里构造编辑器子系统会让进程直接崩掉**
+（实测 `EXCEPTION_ACCESS_VIOLATION`，不是抛异常）。所以工具宁可拒绝执行也不会去试。
+
+**`editor` 动作返回 `_actions_blocked`**
+
+那是写操作授权门在起作用，这是**默认行为**。开启方式见下一节。
+
 ---
 
-## 只读承诺
+## 编辑器动作需要打开 Remote Execution
 
-它不是"尽量不改"，而是**结构上没有改的能力**：
+关卡 / PIE / Actor 这三组动作必须在**编辑器进程里**执行，走 UE 自带的 Python
+Remote Execution 通道。该通道**默认关闭**：
 
-- 全部实现里不存在 `set_editor_property` / `save_asset` / `compile_blueprint` / `spawn_actor`
-- T3D 导出走 `ObjectExporterT3D`，是纯序列化
-- commandlet 只调用 `unreal.load_asset()` 与导出器
+1. 编辑器里 **Project Settings → Plugins → Python → Enable Remote Execution?** 打勾；
+2. 改完**立即生效**，不用重启编辑器；
+3. 用 `status` 确认 `bridge.connected` 变成 `true`。
 
-实测核对方式：跑一次 `sync`，然后看 `Content/` 下有没有文件的修改时间晚于采集开始时间。
+这个开关没有命令行参数、也没有 console 命令，只能在设置界面里勾——这正是本插件
+**不把 Remote Execution 当主力读取路径**的原因。读资产的主力是 T3D 缓存，
+它不需要编辑器，也不需要这个开关。**`logs` 也不需要**：它直接读磁盘上的日志文件。
+
+连不上时逐项排查：编辑器是否已完成加载、防火墙有没有拦 UDP `239.0.0.1:6766`、
+以及（多实例时）插件会优先选**按项目路径匹配**的那个实例。
+
+---
+
+## 安全边界
+
+**读取类工具只读。** 不写入、不编译、不保存、不创建资产。T3D 导出走
+`ObjectExporterT3D`，是纯序列化；commandlet 只调用 `unreal.load_asset()` 与导出器。
+
+**写操作只有 7 个，而且默认关闭：**
+
+| 写操作 | 说明 |
+|---|---|
+| `editor action=pie sub=start` / `stop` / `simulate` | 进入 / 结束 PIE |
+| `editor action=level sub=load` / `new` / `save` / `add` | 关卡加载 / 新建 / 保存 / 挂子关卡 |
+
+开启方式（任选其一）：
+
+- **环境变量**（长期生效）：设 `COMBO_ALLOW_ACTIONS=1`，然后重启 MCP 客户端
+  （MCP 服务是子进程，环境变量在它启动时读取）。
+- **单次授权**：调用时传 `confirm=true`。
+
+未授权时返回带 `_actions_blocked` 的说明，而不是静默失败。
+
+**两道门，不是一个检查。** MCP 侧（`engine/actions.py`）挡住模型误调；编辑器侧
+（`ue/editor_actions.py::_guard_write`）挡住有人绕过 MCP、直接把命令经 Remote
+Execution 送进编辑器。第二道是必要的——那条通道本身是开放的，只靠外部那层不算数。
+
+**明确不做的事**（不是"暂时没做"，是刻意不做）：
+
+- **不执行任意 console 命令。** 那等于把整个引擎控制台交出去，边界会失控。
+- **不保存任意资产。** 只有显式的 `level sub=save`（保存当前关卡，且需要授权）。
+- **不创建 / 修改 / 删除资产。**
+
+### 怎么核对"读取真的没写东西"
+
+跑一次 `sync`，然后看 `Content/` 下有没有文件的修改时间晚于采集开始时间。
+
+### 两个会改变编辑器状态的坑
+
+1. **`level sub=load` 会关掉当前 PersistentLevel，而且不提示保存。** 有未保存改动
+   就先 `level sub=save`。
+2. **`level sub=new` 会立刻存盘**——这是 UE 自身的既有行为，不是本插件加的。
+   所以 `new` 要先把 `asset_path` 想清楚。
 
 ---
 

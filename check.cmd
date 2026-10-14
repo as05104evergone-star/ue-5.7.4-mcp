@@ -5,10 +5,11 @@ setlocal
 REM ===================================================================
 REM  ComboMCP / 一键自检
 REM
-REM  检查三件事，前两件**不需要编辑器在运行**：
+REM  检查四件事，前三件**不需要编辑器在运行**：
 REM    1. 插件有没有被引擎加载过（cache\plugin\loaded.json）
 REM    2. MCP 工具层能不能取到数据（--selftest）
-REM    3. （可选）Remote Execution 通道——只有要读"编辑器里未保存的改动"才需要
+REM    3. 离线测试套件（解析器 / 资产摘要器 / 授权门 / 协议），共 342 项断言
+REM    4. （可选）Remote Execution 通道——只有要读"编辑器里未保存的改动"才需要
 REM ===================================================================
 
 set "SCRIPT_DIR=%~dp0"
@@ -63,7 +64,32 @@ if not "%STATUS%"=="0" (
     exit /b 1
 )
 
-echo ============ 第 3 步（可选）：Remote Execution 通道 ============
+echo ============ 第 3 步：离线测试套件 ============
+echo 全部不需要编辑器。失败任何一项就说明这份代码在这台机器上有问题。
+echo.
+set TESTS_FAILED=0
+for %%T in (
+    "tools\test_t3d.py"
+    "tools\test_t3d_real.py"
+    "tools\test_wiring.py"
+    "tools\test_asset_read.py"
+    "tools\test_editor_actions.py"
+    "tools\mcp_protocol_test.py"
+) do (
+    echo ---- %%~T
+    "%PY%" "%SCRIPT_DIR%%%~T"
+    if not "%errorlevel%"=="0" set TESTS_FAILED=1
+)
+echo.
+if "%TESTS_FAILED%"=="1" (
+    echo [错误] 有测试套件失败，见上方输出。
+    pause
+    exit /b 1
+)
+echo [OK] 六个测试套件全部通过。
+echo.
+
+echo ============ 第 4 步（可选）：Remote Execution 通道 ============
 echo 只有需要读取"编辑器内存里尚未保存的改动"时才用得到；
 echo 日常读取走 T3D 缓存，不需要它。
 echo.
