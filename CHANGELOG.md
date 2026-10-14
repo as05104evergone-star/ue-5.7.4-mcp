@@ -101,7 +101,7 @@
 | `test_t3d_real.py` | 54 |
 | `test_wiring.py` | 48 |
 | `mcp_protocol_test.py` | 41 |
-| `test_asset_read.py`（新） | 63 |
+| `test_asset_read.py`（新） | 73 |
 | `test_editor_actions.py`（新） | 66 |
 
 `test_asset_read.py` 的夹具是 **UE 5.6.1 真实导出**的 T3D（材质 / 材质实例 /
