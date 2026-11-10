@@ -139,6 +139,8 @@ def main():
                 "class_summary", "graph_overview", "flow", "node_detail",
                 "montage", "anim_asset", "anim_calls", "diagnose",
                 "audit", "reflect", "pie_state"}
+        # 特效挂点三件套（方案 B）：通知审计 / 挂点清单 / 偏移求解
+        fx_tools = {"fx_notify_map", "fx_mounts", "fx_solve_offset"}
         # 资产覆盖面扩展 + 基础操作 + 编辑器动作加进来的三个：
         #   asset  —— 读任意资产的统一入口（材质/贴图/网格/关卡/通用）
         #   help   —— 基础操作答疑（本地手册）
@@ -154,7 +156,7 @@ def main():
         kb_tools = {"engine_facts", "engine_source", "ue_docs", "interface_check"}
         kbase_dir = os.path.join(os.path.dirname(ROOT), "KBaseUE", "Content", "Python")
         kbase_present = os.path.isfile(os.path.join(kbase_dir, "engine_query.py"))
-        expected = core | extra_tools | kb_tools
+        expected = core | fx_tools | extra_tools | kb_tools
         print("      KBaseUE %s（影响这 4 个工具是否可用，不影响它们是否注册）"
               % ("已安装" if kbase_present else "未安装"))
 

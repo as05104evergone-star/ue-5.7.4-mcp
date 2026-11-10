@@ -24,6 +24,7 @@ from engine import collector as collector_mod      # noqa: E402
 from engine import actions as actions_mod           # noqa: E402
 from engine import logs as logs_mod                 # noqa: E402
 from engine import offline                          # noqa: E402
+from engine import fx as fx_mod                     # noqa: E402
 from engine import search as index_search           # noqa: E402
 from engine.bridge import UEBridge, BridgeError     # noqa: E402
 
@@ -348,6 +349,42 @@ def t_montage(params):
         "asset_path": path,
         "with_notify_props": bool(params.get("with_notify_props", True)),
     })
+
+
+def t_fx_map(params):
+    """列出蒙太奇里每条通知当前的挂点与偏移（纯 T3D）。
+
+    这是「特效为什么在原点」的第一问：看 socket_name 是不是空的。
+    """
+    path = params.get("asset_path")
+    if not path:
+        return {"error": "asset_path is required"}
+    return fx_mod.notify_map(path)
+
+
+def t_fx_mounts(params):
+    """某条通知那一帧有哪些骨骼 / socket 可用（要起一次 commandlet）。"""
+    path = params.get("asset_path")
+    if not path:
+        return {"error": "asset_path is required"}
+    return fx_mod.mounts(path, params.get("notify_index"))
+
+
+def t_fx_solve(params):
+    """核心：算出「特效落在 target_bone」时通知该填的挂点与偏移。"""
+    path = params.get("asset_path")
+    target = params.get("target_bone")
+    if not path:
+        return {"error": "asset_path is required"}
+    if not target:
+        return {"error": "target_bone is required（想让特效出现在哪根骨骼）"}
+    return fx_mod.solve_offset(
+        path,
+        notify_index=params.get("notify_index"),
+        target_bone=target,
+        target_offset=params.get("target_offset"),
+        basis_name=params.get("basis_name"),
+    )
 
 
 def t_anim_asset(params):
@@ -1069,6 +1106,63 @@ _TOOLS = [
             "required": ["asset_path"],
         },
         "handler": t_montage,
+    },
+    {
+        "name": "fx_notify_map",
+        "description": (
+            "列出 AnimMontage 里每条动画通知当前的挂点与偏移，专治「特效出现在角色原点」。"
+            "socket_name 为空或写错时，引擎会静默回落到组件变换（角色根）且不报任何错；"
+            "本工具把每条通知的 socket_name / location_offset / rotation_offset 连同 "
+            "Niagara 系统一起列出来。纯解析缓存，不启动引擎。"),
+        "inputSchema": {
+            "type": "object",
+            "properties": {"asset_path": {"type": "string"}},
+            "required": ["asset_path"],
+        },
+        "handler": t_fx_map,
+    },
+    {
+        "name": "fx_mounts",
+        "description": (
+            "列出某条通知触发那一帧可用的骨骼与 socket 名字（从蒙太奇骨架实测，不是猜的）。"
+            "写 SocketName 之前用它确认名字存在——写错不会报错，只会让特效悄悄回到角色根。"
+            "需要起一次 headless 引擎（约 10 秒，冷启动约 40 秒）。"),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "asset_path": {"type": "string"},
+                "notify_index": {"type": "integer",
+                                 "description": "通知序号，来自 fx_notify_map；不填取第一条带动画段的"},
+            },
+            "required": ["asset_path"],
+        },
+        "handler": t_fx_mounts,
+    },
+    {
+        "name": "fx_solve_offset",
+        "description": (
+            "把「让这个特效出现在某根骨骼上」直接算成通知该填的三个字段"
+            "（socket_name / location_offset / rotation_offset），不用再在编辑器里反复试数。"
+            "做法：从 T3D 解出通知时间对应的 AnimSequence 与序列内时间，用 commandlet 采样"
+            "该帧姿态，再算目标相对挂点的相对变换。同时报出特效现在实际落在哪、离目标多远，"
+            "并识别「挂点名写错导致静默回落到角色根」这种不报错的错误。"
+            "target_offset 可叠加相对目标骨骼的微调（如 [0,0,10] = 沿骨骼局部 Z 再抬 10 cm）。"),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "asset_path": {"type": "string"},
+                "notify_index": {"type": "integer",
+                                 "description": "通知序号，来自 fx_notify_map；不填取第一条带动画段的"},
+                "target_bone": {"type": "string",
+                                "description": "想让特效出现的骨骼或 socket 名，如 hand_r / weapon_r"},
+                "target_offset": {"type": "array", "items": {"type": "number"},
+                                  "description": "相对目标骨骼的微调 [x,y,z]，单位 cm，默认 [0,0,0]"},
+                "basis_name": {"type": "string",
+                               "description": "强制指定挂点（一般不用填，默认沿用通知现有的 SocketName）"},
+            },
+            "required": ["asset_path", "target_bone"],
+        },
+        "handler": t_fx_solve,
     },
     {
         "name": "anim_asset",

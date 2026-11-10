@@ -74,7 +74,7 @@
   或 [mirno-ehf/ue5-mcp](https://github.com/mirno-ehf/ue5-mcp)——它们能建节点、连线、改默认值。
   本插件**没有**这个能力，也不打算有。
 * **你需要覆盖 5.6 或 5.8。** ZiggyMar 明确支持 5.6/5.8；本插件只在 **5.7.4** 上实测过。
-* **你需要大量现成工具。** ZiggyMar 有 101 个工具，本插件 24 个（刻意的：工具定义会进入
+* **你需要大量现成工具。** ZiggyMar 有 101 个工具，本插件 27 个（刻意的：工具定义会进入
   每一次模型请求）。
 
 关键决策是**不把 Remote Execution 当主路径**：那个开关（`bRemoteExecution`）默认关闭，
@@ -151,7 +151,7 @@ DeepSeek Harness 用 Cordis 层挂载，见 [`docs/dsh-setup.md`](docs/dsh-setup
 
 ## 用法
 
-### 工具清单（24 个，其中 4 个需要可选的 KBaseUE）
+### 工具清单（27 个，其中 4 个需要可选的 KBaseUE）
 
 工具面刻意精简：工具定义会进入**每一次**模型请求。
 
@@ -168,6 +168,9 @@ DeepSeek Harness 用 Cordis 层挂载，见 [`docs/dsh-setup.md`](docs/dsh-setup
 | `flow` | **读执行逻辑**（默认 `format=dsl`，比 JSON 省一个数量级 token） |
 | `node_detail` | 单节点的引脚与默认值 |
 | `montage` | Montage 的段落 / 通知 / 时间轴 |
+| **`fx_notify_map`** | **特效通知审计**：每条通知当前的挂点 / 偏移 / 绑定序列（纯 T3D，不启引擎） |
+| **`fx_mounts`** | **挂点清单**：某条通知那一帧可用的骨骼名与 socket（起一次 headless 引擎） |
+| **`fx_solve_offset`** | **偏移求解**：给目标骨骼，直接算出通知该填的 `SocketName` / `LocationOffset` / `RotationOffset` |
 | `anim_asset` | 动画序列 / 混合空间 / PoseSearch 数据库 |
 | `anim_calls` | 蓝图里所有 Montage 相关调用 |
 | `diagnose` | **连招诊断**：对照蓝图调用点与动画时序给出问题清单 |
@@ -177,6 +180,37 @@ DeepSeek Harness 用 Cordis 层挂载，见 [`docs/dsh-setup.md`](docs/dsh-setup
 | **`asset`** | **读任意资产**：材质 / 材质实例 / 贴图 / 静态网格 / 骨骼网格 / 关卡 / 其它任何类 |
 | **`help`** | **基础操作答疑**：10 个主题，支持中英混合的自然语言查询 |
 | **`editor`** | **编辑器动作**：`capabilities` / `pie` / `level` / `actor` / `logs` |
+
+#### 特效挂点三件套（方案 B：直接给数值）
+
+动画通知里的 `LocationOffset` / `RotationOffset` 是**挂点局部空间**的量，而人眼要的是**组件空间**里的位置，中间隔着一条骨骼链——所以在编辑器里试数基本试不中。
+
+更麻烦的是引擎的两处静默行为：
+
+- `SocketName` 为空**或写错**，`GetSocketTransform` 都会回落到组件变换（角色根），特效出现在原点且**不报任何错**；
+- `Template` 是循环的 Niagara 系统时，`SpawnEffect` 直接 `return nullptr`，调什么偏移都没反应。
+
+三个工具把这件事变成一次计算：
+
+```text
+fx_notify_map    → 这条特效现在挂在哪、偏移多少、绑定到哪条序列的哪一秒
+fx_mounts        → 那一帧有哪些骨骼名 / socket 名可以写（88 根骨骼 + 3 个 socket）
+fx_solve_offset  → 想让特效出现在 hand_r，SocketName/LocationOffset/RotationOffset 填什么
+```
+
+实测（`AM_LightCombo01` 第 0 条通知，目标 `hand_r`，现挂点 `Weapon`）：
+
+```jsonc
+"current":   { "effect_position_cm": [-31.0088, -27.1564, 78.0717],
+               "distance_to_target_cm": 17.93 },
+"suggested": { "socket_name": "Weapon",
+               "location_offset": [-7.4659, 16.3025, 0.0],
+               "rotation_offset": [-20.6075, 133.8073, 132.5509] }
+```
+
+照抄进通知即可，一次调用约 12 秒（起一次 headless 引擎）。
+
+> 它**不判断特效朝向**。刀光朝哪一侧仍需目视微调 `RotationOffset` 的 Roll。
 
 #### 三个新工具能回答什么
 

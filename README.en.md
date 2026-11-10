@@ -84,7 +84,7 @@ Data read live via `gh api` on 2026-09-28, not estimated:
   and change defaults. This plugin **cannot** do that and does not intend to.
 * **You need 5.6 or 5.8 coverage.** ZiggyMar targets 5.6/5.8 specifically; this one has
   only been tested on **5.7.4**.
-* **You want a large tool surface.** ZiggyMar ships 101 tools; this one ships 21
+* **You want a large tool surface.** ZiggyMar ships 101 tools; this one ships 27
   (deliberately — tool definitions go into every model request).
 
 The key decision: **Remote Execution is not the main path**. That switch
@@ -160,7 +160,7 @@ For DeepSeek Harness, mounting goes through the Cordis layer — see
 
 ## Usage
 
-### Tools (24, four of which need the optional KBaseUE)
+### Tools (27, four of which need the optional KBaseUE)
 
 The tool surface is deliberately small: tool definitions go into **every** model request.
 
@@ -177,6 +177,9 @@ The tool surface is deliberately small: tool definitions go into **every** model
 | `flow` | **Read execution logic** (defaults to `format=dsl` — an order of magnitude fewer tokens than JSON) |
 | `node_detail` | Pins and default values of a single node |
 | `montage` | Montage sections / notifies / timeline |
+| **`fx_notify_map`** | **FX notify audit**: each notify's current socket / offsets / bound sequence (pure T3D, no engine start) |
+| **`fx_mounts`** | **Available mounts**: bone names and sockets at that notify's frame (starts one headless engine) |
+| **`fx_solve_offset`** | **Offset solver**: given a target bone, returns the `SocketName` / `LocationOffset` / `RotationOffset` to type into the notify |
 | `anim_asset` | Anim sequences / blend spaces / PoseSearch databases |
 | `anim_calls` | Every montage-related call in a blueprint |
 | `diagnose` | **Combo diagnosis**: cross-checks blueprint call sites against animation timing |
@@ -186,6 +189,44 @@ The tool surface is deliberately small: tool definitions go into **every** model
 | **`asset`** | **Read any asset**: materials / material instances / textures / static meshes / skeletal meshes / levels / anything else |
 | **`help`** | **Basic-operations Q&A**: 10 topics, accepts natural-language queries |
 | **`editor`** | **Editor actions**: `capabilities` / `pie` / `level` / `actor` / `logs` |
+
+#### FX mount tools (plan B: hand you the numbers)
+
+`LocationOffset` / `RotationOffset` on an animation notify are expressed in **attach-point
+local space**, while what your eye wants is a position in **component space** — with a
+bone chain in between. That is why trial-and-error in the editor almost never converges.
+
+Worse, the engine is silent about two failure modes:
+
+- An empty **or misspelled** `SocketName` makes `GetSocketTransform` fall back to the
+  component transform (the character root) — the effect lands at the origin and **no
+  error is reported**;
+- A looping Niagara system makes `SpawnEffect` `return nullptr` outright, so adjusting
+  offsets does nothing.
+
+Three tools turn this into one calculation:
+
+```text
+fx_notify_map    → where this effect currently sits, its offsets, and which sequence/seconds it is bound to
+fx_mounts        → which bone/socket names exist at that frame (88 bones + 3 sockets measured)
+fx_solve_offset  → to place it on hand_r: what to put in SocketName / LocationOffset / RotationOffset
+```
+
+Measured (`AM_LightCombo01`, notify 0, target `hand_r`, current socket `Weapon`):
+
+```jsonc
+"current":   { "effect_position_cm": [-31.0088, -27.1564, 78.0717],
+               "distance_to_target_cm": 17.93 },
+"suggested": { "socket_name": "Weapon",
+               "location_offset": [-7.4659, 16.3025, 0.0],
+               "rotation_offset": [-20.6075, 133.8073, 132.5509] }
+```
+
+Copy those straight into the notify. One call costs about 12 seconds (one headless
+engine start).
+
+> It does **not** judge effect orientation. Which way a slash faces still needs a visual
+> tweak of `RotationOffset`'s Roll.
 
 #### What the three new tools answer
 

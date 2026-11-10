@@ -61,11 +61,151 @@ def short_object_name(value):
     return t3d_parser._object_short_name(value)
 
 
+_RE_OBJECT_PATH = re.compile(r"'([^']+)'")
+
+
+def _split_object_ref(value):
+    """把 T3D 的资产引用拆成 ``(对象路径, 单引号里的名字)``。
+
+    T3D 里同一个字段有两种写法，必须都认::
+
+        AnimReference="/Script/Engine.AnimSequence'/Game/A/AS_X.AS_X'"
+        NotifyStateClass="/Game/A/ANS_X.ANS_X_C'ANS_X_C_0'"
+
+    前者单引号里就是对象路径；后者单引号里是**实例名**，路径在前面。
+    """
+    if not isinstance(value, str):
+        return None, None
+    match = _RE_OBJECT_PATH.search(value)
+    quoted = match.group(1) if match else None
+    head = value.split("'", 1)[0].strip()
+    return (head or None), quoted
+
+
+def object_path(value):
+    """``/Script/Engine.AnimSequence'/Game/.../AS_X.AS_X'`` -> ``/Game/.../AS_X``。
+
+    两种引用写法都支持；对象路径末尾的 ``.资产名`` 会去掉，便于和缓存索引对齐
+    （``unreal.load_asset`` 两种写法都吃）。
+    """
+    head, quoted = _split_object_ref(value)
+    if quoted and quoted.startswith("/"):
+        path = quoted
+    elif head and head.startswith("/"):
+        path = head
+    else:
+        return None
+    if "/" in path and "." in path.rsplit("/", 1)[-1]:
+        parent, tail = path.rsplit("/", 1)
+        path = parent + "/" + tail.split(".", 1)[0]
+    return path
+
+
+_RE_INSTANCE_SUFFIX = re.compile(r"_\d+$")
+
+
+def object_class_name(value):
+    """``/Game/A/ANS_X.ANS_X_C'ANS_X_C_0'`` -> ``ANS_X_C``（去掉实例序号）。"""
+    head, quoted = _split_object_ref(value)
+    if head and head.startswith("/"):
+        tail = head.rsplit("/", 1)[-1]
+        if "." in tail:
+            return tail.rsplit(".", 1)[-1]
+        return tail
+    if quoted:
+        return _RE_INSTANCE_SUFFIX.sub("", quoted)
+    return None
+
+
 def find_asset_object(roots, cls=None):
     """在一棵 T3D 对象树里找目标资产对象（顶层通常是它）。"""
     for obj in roots:
         if cls is None or obj.cls == cls:
             return obj
+    return None
+
+
+def _as_vec3(raw, keys=("X", "Y", "Z")):
+    """``(X=..,Y=..,Z=..)`` -> ``[x, y, z]``（保留 4 位小数）。"""
+    if not isinstance(raw, dict):
+        return None
+    out = []
+    for key in keys:
+        if key not in raw:
+            return None
+        out.append(round(_to_float(raw.get(key)), 4))
+    return out
+
+
+def _as_bool(value):
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str) and value.lower() in ("true", "false"):
+        return value.lower() == "true"
+    return None
+
+
+def notify_instance_props(obj):
+    """从内联的 C++ 通知对象里取出"挂在哪、偏多少"。
+
+    T3D 是**增量序列化**：只有非默认值才写出来。所以缺省即
+    ``Attached=True`` / ``SocketName=""`` / 偏移为零 / ``Scale=1``。
+    这一点很关键——一个"什么都没写"的通知正好就是会出现在角色原点的那个。
+
+    实测形状（UE 5.6，AM_Hero_Combo）::
+
+        Begin Object Name="AnimNotify_PlayNiagaraEffect_0" ...
+           Template="/Script/Niagara.NiagaraSystem'/Game/VFX/.../FXS_NA_Slash...'"
+           LocationOffset=(X=0.000000,Y=50.000000,Z=0.000000)
+           RotationOffset=(Pitch=0.000000,Yaw=-180.000000,Roll=0.000000)
+           SocketName="weapon_r"
+        End Object
+    """
+    if obj is None:
+        return {}
+    props = {}
+    template = short_object_name(obj.props.get("Template"))
+    if template:
+        props["template"] = template
+    socket = obj.props.get("SocketName")
+    if isinstance(socket, str) and socket and socket != "None":
+        props["socket_name"] = socket
+    offset = _as_vec3(obj.props.get("LocationOffset"))
+    if offset is not None:
+        props["location_offset"] = offset
+    rotation = _as_vec3(obj.props.get("RotationOffset"), ("Pitch", "Yaw", "Roll"))
+    if rotation is not None:
+        props["rotation_offset"] = rotation
+    scale = _as_vec3(obj.props.get("Scale"))
+    if scale is not None:
+        props["scale"] = scale
+    attached = _as_bool(obj.props.get("Attached"))
+    if attached is not None:
+        props["attached"] = attached
+    return props
+
+
+def montage_time_to_sequence_time(seq_name, seg_begin, montage_time, flat_segments):
+    """蒙太奇时间 -> 序列内时间。
+
+    一个槽位段在蒙太奇上的起点是 ``StartPos``、在序列内的起点是
+    ``AnimStartTime``、按 ``AnimPlayRate`` 播放，所以::
+
+        序列内时间 = AnimStartTime + (蒙太奇时间 - StartPos) * AnimPlayRate
+
+    实测校验（AM_Hero_Combo 第 1 段）：``StartPos=0.75``、``AnimEndTime=2.8``、
+    ``AnimPlayRate=1.3`` —— ``2.8/1.3 = 2.153846``，正好等于该段
+    ``CompositeSections`` 里的 ``SegmentLength``。
+    """
+    for seg in flat_segments or []:
+        if seg.get("anim") != seq_name:
+            continue
+        start_pos = seg.get("start_pos", 0.0)
+        if abs(start_pos - seg_begin) > 1e-4:
+            continue
+        rate = seg.get("play_rate", 1.0) or 1.0
+        anim_start = seg.get("anim_start", 0.0)
+        return anim_start + (montage_time - start_pos) * rate
     return None
 
 
@@ -100,9 +240,13 @@ def parse_montage(text):
         if seg_len is not None:
             entry["segment_length"] = round(_to_float(seg_len), 4)
         entry["segment_index"] = _to_int(raw.get("SegmentIndex"), 0)
-        seq = short_object_name(raw.get("LinkedSequence"))
+        seq_ref = raw.get("LinkedSequence")
+        seq = short_object_name(seq_ref)
         if seq:
             entry["sequence"] = seq
+            full = object_path(seq_ref)
+            if full:
+                entry["sequence_path"] = full
         sections.append(entry)
     sections.sort(key=lambda s: s["start"])
 
@@ -116,8 +260,12 @@ def parse_montage(text):
         for seg in (track.get("AnimSegments") or []) if isinstance(track, dict) else []:
             if not isinstance(seg, dict):
                 continue
-            anim = short_object_name(seg.get("AnimReference"))
+            anim_ref = seg.get("AnimReference")
+            anim = short_object_name(anim_ref)
             item = {"anim": anim or "?"}
+            full_path = object_path(anim_ref)
+            if full_path:
+                item["anim_path"] = full_path
             for key, out in (("StartPos", "start_pos"), ("AnimStartTime", "anim_start"),
                              ("AnimEndTime", "anim_end"), ("AnimPlayRate", "play_rate"),
                              ("LoopingCount", "loops"),
@@ -131,6 +279,18 @@ def parse_montage(text):
         })
 
     # ---- 通知（连招诊断的核心：输入禁用窗口 / 取消窗口都在这里）
+    flat_segments = []
+    for slot in slots:
+        for seg in slot.get("segments") or []:
+            flat_segments.append(seg)
+
+    # 内联的 C++ 通知实例是 montage 的子对象（BluePrint 通知没有实体可找）
+    instances = {}
+    for child in (getattr(montage, "children", None) or []):
+        name = getattr(child, "name", None)
+        if name:
+            instances.setdefault(name, child)
+
     notifies = []
     for raw in montage.indexed("Notifies"):
         if not isinstance(raw, dict):
@@ -148,7 +308,8 @@ def parse_montage(text):
         name = raw.get("NotifyName") or "?"
         entry = {
             "name": name,
-            "cls": short_object_name(state_obj or single_obj),
+            "cls": (object_class_name(state_obj or single_obj)
+                    or short_object_name(state_obj or single_obj)),
             "kind": "state" if state_obj else ("instant" if single_obj else "unknown"),
             "start": round(start, 4),
             "duration": round(duration, 4),
@@ -158,6 +319,52 @@ def parse_montage(text):
         offset = raw.get("TriggerTimeOffset")
         if offset is not None and abs(_to_float(offset)) > 1e-6:
             entry["trigger_offset"] = round(_to_float(offset), 6)
+
+        # ---- 内联实例 + 它挂在哪一段、对应哪个序列、序列内时间是多少
+        ref_name = short_object_name(single_obj or state_obj)
+        if ref_name:
+            entry["instance"] = ref_name
+            inst = instances.get(ref_name)
+            if inst is not None:
+                if getattr(inst, "cls", None):
+                    entry["instance_class"] = inst.cls
+                props = notify_instance_props(inst)
+                if props:
+                    entry["props"] = props
+
+        seg_index = raw.get("SegmentIndex")
+        if seg_index is not None:
+            entry["segment_index"] = _to_int(seg_index)
+        seg_begin = _to_float(raw.get("SegmentBeginTime"), 0.0)
+        if seg_begin:
+            entry["segment_begin"] = round(seg_begin, 4)
+        seq_name = short_object_name(raw.get("LinkedSequence"))
+        if seq_name:
+            entry["sequence"] = seq_name
+            full = object_path(raw.get("LinkedSequence"))
+            if full:
+                entry["sequence_path"] = full
+            seq_time = montage_time_to_sequence_time(
+                seq_name, seg_begin, start, flat_segments)
+            if seq_time is not None:
+                entry["sequence_time"] = round(seq_time, 4)
+
+        # 通知经常不写 LinkedSequence（增量序列化只写非默认值），但它一定落在
+        # 某个槽位动画段上。单槽位蒙太奇里 SegmentIndex 就是段数组下标，直接回填。
+        if "sequence" not in entry and len(slots) == 1:
+            seg_index_raw = entry.get("segment_index")
+            segments_of_slot = slots[0].get("segments") or []
+            if seg_index_raw is not None and 0 <= seg_index_raw < len(segments_of_slot):
+                seg = segments_of_slot[seg_index_raw]
+                if seg.get("anim"):
+                    entry["sequence"] = seg["anim"]
+                if seg.get("anim_path"):
+                    entry["sequence_path"] = seg["anim_path"]
+                seq_time = montage_time_to_sequence_time(
+                    seg.get("anim"), seg.get("start_pos", 0.0), start, flat_segments)
+                if seq_time is not None:
+                    entry["sequence_time"] = round(seq_time, 4)
+
         notifies.append(entry)
     notifies.sort(key=lambda n: n["start"])
 
