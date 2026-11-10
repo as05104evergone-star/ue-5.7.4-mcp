@@ -62,3 +62,12 @@ Config/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# ---- 密钥 / 凭据（防止误提交）----
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.pfx
+secrets.*
