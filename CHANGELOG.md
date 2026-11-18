@@ -2,6 +2,11 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## 未发布
+
+- 项目展示名更新为 **Blueprint Agent Toolkit for Unreal Engine**，仓库名更新为 `unreal-blueprint-agent-toolkit`。安装目录使用 `Plugins/ComboMCP`，兼容已有 MCP 配置。
+- 重写中英文 README，按蓝图编写、资产检查、连招和特效诊断、PIE 操作与引擎查证介绍现有工具和工作流。
+
 ## [1.4.0] — 2026-11-18
 
 - 蓝图图表开放授权写入。AI 可以根据指定的目标、行为和修改范围，用 `blueprint_edit` 在已打开的 K2 图页内自主编写逻辑。
@@ -255,8 +260,8 @@
 3. `MemberParent` 是**完整对象路径**（`"/Script/CoreUObject.Class'/Script/Engine.Actor'"`），
    直接取会得到 `Class` 而不是 `Actor`。
 
-[1.4.0]: https://github.com/as05104evergone-star/ue-5.7.4-mcp/releases/tag/v1.4.0
-[1.3.0]: https://github.com/as05104evergone-star/ue-5.7.4-mcp/releases/tag/v1.3.0
-[1.2.0]: https://github.com/as05104evergone-star/ue-5.7.4-mcp/releases/tag/v1.2.0
-[1.1.0]: https://github.com/as05104evergone-star/ue-5.7.4-mcp/releases/tag/v1.1.0
-[1.0.0]: https://github.com/as05104evergone-star/ue-5.7.4-mcp/releases/tag/v1.0.0
+[1.4.0]: https://github.com/as05104evergone-star/unreal-blueprint-agent-toolkit/releases/tag/v1.4.0
+[1.3.0]: https://github.com/as05104evergone-star/unreal-blueprint-agent-toolkit/releases/tag/v1.3.0
+[1.2.0]: https://github.com/as05104evergone-star/unreal-blueprint-agent-toolkit/releases/tag/v1.2.0
+[1.1.0]: https://github.com/as05104evergone-star/unreal-blueprint-agent-toolkit/releases/tag/v1.1.0
+[1.0.0]: https://github.com/as05104evergone-star/unreal-blueprint-agent-toolkit/releases/tag/v1.0.0

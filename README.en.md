@@ -1,89 +1,63 @@
-# ComboMCP
+# Blueprint Agent Toolkit for Unreal Engine
 
-**Give your AI the tools to read Unreal Engine assets and implement Blueprint logic in the editor.**
+**Give AI agents the tools to understand Unreal projects, debug combat combos, and build Blueprint logic in the editor.**
 
-**English** | [中文](README.md)
+[中文](README.md) · **English** · [Quickstart (Chinese)](docs/quickstart.md) · [Releases](https://github.com/as05104evergone-star/unreal-blueprint-agent-toolkit/releases)
 
-An MCP server that exports blueprint graphs, montage timing, AnimBP state machines and
-**materials / textures / meshes / levels** into offline-parseable T3D text — so a model can
-answer questions like *"why won't my combo chain continue?"*, *"what does this graph
-actually do?"* or *"where does this material's roughness come from?"* with **evidence**.
+Formerly **ComboMCP**, this toolkit connects an AI agent to Unreal Engine through MCP. You describe the behavior and the edit scope. The agent reads the project and chooses how to implement the logic. The Unreal Editor module makes the actual node, pin, compile, and save changes.
 
-Starting with v1.4, an AI client can use `blueprint_edit` to implement logic in an open K2 graph.
-Give it the target, expected behavior, edit scope and save instructions. It can inspect the
-live graph, choose nodes, connect pins, lay out and comment the edited region, and compile.
-With save authorization, it can verify the saved graph on disk. [Graph editing workflow](docs/quickstart.md#blueprint_edit)
+## What you can do
 
----
+| Task | What you get | MCP tools |
+| --- | --- | --- |
+| **Implement Blueprint logic** | Inspect an open K2 graph and its selection. Add nodes, wire pins, set defaults, lay out and comment the edited region, and compile in a single undo transaction. Review, save, and verify the result on disk | `blueprint_edit` |
+| **Understand existing Blueprints** | Inspect classes, variables, functions and graphs. Follow execution from an entry point, check pin values and links, trace references, and find isolated nodes | `class_summary`, `graph_overview`, `flow`, `node_detail`, `index`, `audit`, `reflect` |
+| **Diagnose combat combos** | Compare Blueprint Montage calls with animation sections and notify timing to find where a combo stops | `diagnose`, `anim_calls`, `montage`, `anim_asset` |
+| **Resolve animation FX mounts** | Inspect a notify's mount and offset, list bones and sockets at the notify frame, and calculate positional and rotational offsets for the target | `fx_notify_map`, `fx_mounts`, `fx_solve_offset` |
+| **Inspect assets and dependencies** | Search project assets, find dependencies and referencers, summarize materials, textures, meshes, levels and other assets, and collect an on-disk T3D cache | `project_map`, `search`, `find_refs`, `asset`, `sync` |
+| **Inspect runtime state and operate the editor** | Read live PIE state, including the Pawn, combat component, the active Montage, and attachments. Control PIE and levels, list actors, or read logs | `pie_state`, `editor` |
+| **Check setup and get help** | Inspect the resolved engine, project, cache and write policy. Ask the agent for setup, editing, PIE, or log instructions | `status`, `help` |
+| **Check UE 5.7 engine behavior** | Find source lines, query a mirror of the official docs, and verify whether a Blueprint interface member is implemented as an event or function graph. Requires the sibling `KBaseUE` plugin | `engine_source`, `ue_docs`, `engine_facts`, `interface_check` |
 
-## Compatibility (read this first)
+The server exposes **28 MCP tools**. Four engine reference tools depend on the optional `Plugins/KBaseUE` plugin. Use `help` or the [quickstart](docs/quickstart.md) for operating instructions. The repository also includes a [UE 5.7 knowledge-base Skill](skills/ue57-knowledge-base/SKILL.md) for source checks and evidence collection.
 
-| Component | Status |
-|---|---|
-| **Unreal Engine 5.7.4** | ✅ **Tested** |
-| **Unreal Engine 5.6.1** | v1.4 Win64 Development Editor build passed. v1.3 read and editor actions tested. Live graph editing tested on 5.7.4. |
-| UE 5.0 – 5.5 | v1.4 unverified |
-| UE 4.x | ❌ **Unsupported.** Different menu API and different pin serialization format |
-| **Windows** | ✅ **Tested.** The `.cmd` scripts and engine path resolution are verified on Windows |
-| Linux / macOS | ⚠️ **Untested.** The Python side now derives engine paths per platform (no hardcoded `Win64`), but the `.cmd` scripts have no equivalent — run the commands by hand |
-| **DeepSeek Harness** | ✅ **Tested** |
-| Other MCP clients | ⚠️ **Untested.** The wire protocol is standard MCP stdio (JSON-RPC 2.0) and it advertises `2025-06-18` / `2025-03-26` / `2024-11-05`; the config shape is identical for Claude Desktop / Cursor / Cline, but it has not been run outside DSH |
+## Ask the agent to write Blueprint logic
 
-**Multiple engine versions need no environment variable.** The plugin picks the engine from
-**the project's own `.uproject` `EngineAssociation`**: a 5.6 project is collected with the
-5.6 `UnrealEditor-Cmd`, a 5.7 project with 5.7. `status` reports what it resolved
-(`project_association` / `engine_root` / `engine_version`).
+Open the target Blueprint and K2 graph in Unreal Editor, enable Python Remote Execution, and end PIE or simulation. Specify the entry point, expected behavior, edit scope, and save policy.
 
-The MCP server uses Unreal's bundled Python. Version 1.4 requires a matching
-`ComboMCPEditor` binary for the engine and platform. For source installs, build the
-project's Development Editor target. Live editor tools use the Remote Execution setting.
+> Use ComboMCP to implement the attack condition in the open graph. Start at the selected `TryAttack` event. Continue into the existing attack logic when `bCanAttack` is True and end execution when it is False. Limit changes to this wiring and the new nodes, place them to the right of the entry, and add an “Attack condition” comment. I authorize editing and saving. After a successful compile and wiring review, save and report the compile and disk readback results.
 
----
+| Step | What the agent does |
+| --- | --- |
+| `inspect` | Read the live graph, including unsaved nodes and links, and get the current `revision` |
+| `apply` | Apply a batch of nodes, links, defaults, layout and comments, then compile and return diagnostics |
+| `review` | Focus the modified area and check the branches, links, overlaps, and possible obstructions |
+| `save` | With save authorization, write the Blueprint package and re-export it from disk to verify node IDs, positions, comment titles, and links |
+
+You can also request a read-only diagnosis or ask the agent to edit and compile while leaving the graph unsaved for canvas review. [More examples](docs/quickstart.md#blueprint-edit-prompts)
+
+Graph editing covers existing K2 graphs. Create new Blueprint assets, member declarations or event entry points, and remove existing nodes in Unreal Editor. [Supported graph operations](docs/quickstart.md#blueprint_edit)
+
+## Two more workflows
+
+### Find why a combo stops
+
+1. Use `diagnose` to compare calls from the combat component against Montage sections and notify timing.
+2. Use `flow` to trace the relevant event and `node_detail` to verify the exact pins.
+3. Use `editor` to start PIE and `pie_state` to inspect the live objects and state. End PIE before applying any graph edits.
+
+### Find the right FX mount
+
+1. Use `fx_notify_map` to see the notify's current socket and offsets.
+2. Use `fx_mounts` to list the available bones and sockets at the notify frame.
+3. Use `fx_solve_offset` to calculate `SocketName`, `LocationOffset`, and `RotationOffset`. Enter the result in Unreal Editor and review the effect orientation in the viewport.
 
 ## Installation
 
-### 1. Drop the plugin into your project
-
-Download and extract the release source archive. Rename the directory containing
-`ComboMCP.uplugin` to `ComboMCP` and place it at:
-
-```
-<YourUEProject>/Plugins/ComboMCP/
-```
-
-No `.uproject` edit needed — `EnabledByDefault: true` in the `.uplugin` handles it.
-The plugin always lives at `<project>/Plugins/ComboMCP`; the code derives the project
-root from that, so **moving to another project is just a copy**.
-
-### 2. Build the module and restart the editor
-
-For source installs, build the Development Editor target before opening the project. After restarting you should see **Combo Blueprint MCP**
-under **Edit → Plugins**, and a **Tools → ComboMCP** menu.
-
-One line in the `.uplugin` solves a problem you would otherwise hit:
-
-```json
-"Plugins": [{ "Name": "PythonScriptPlugin", "Enabled": true }]
-```
-
-This auto-enables PythonScriptPlugin — so **no** `-EnablePlugins=PythonScriptPlugin`
-flag and **no** editor setting to tick.
-
-### 3. Build the blueprint cache
-
-Reads are served from a local T3D cache. Call the `sync` tool from your MCP client:
-
-```json
-{ "scope": "/Game", "classes": ["Blueprint", "AnimMontage"], "limit": 200 }
-```
-
-It runs `UnrealEditor-Cmd -run=PythonScript` as a **separate process** — which means
-**it works while your editor is open** (verified: editor and commandlet coexist as two
-instances).
-
-### 4. Wire it into your MCP client
-
-Standard config shape (substitute your own two paths):
+1. Download the [release source](https://github.com/as05104evergone-star/unreal-blueprint-agent-toolkit/releases). Extract it into `<UE Project>/Plugins/ComboMCP/` with `ComboMCP.uplugin` at that directory's root. Use `ComboMCP` as the destination directory when cloning, too.
+2. Build the project's **Development Editor** target for your engine and platform, or install a matching build of `ComboMCPEditor`. The plugin enables `PythonScriptPlugin` through its descriptor.
+3. Restart UE and find **Blueprint Agent Toolkit for Unreal Engine** in **Edit → Plugins**. The `v1.4.0` source archive uses **Combo Blueprint MCP** as the display name. Find the MCP configuration under **Tools → ComboMCP → 显示 MCP 客户端配置**.
+4. Connect your MCP client and run `status` to confirm the project and engine. Use `sync` to collect assets from disk. Enable Remote Execution for live editor operations.
 
 ```json
 {
@@ -96,385 +70,43 @@ Standard config shape (substitute your own two paths):
 }
 ```
 
-> The **Tools → ComboMCP → Show MCP client config** menu prints exactly this for your
-> machine, so you don't have to transcribe paths by hand.
+[DeepSeek Harness setup](docs/dsh-setup.md) · [Installation guide](docs/quickstart.md#install) · [Remote Execution setup](docs/quickstart.md#remoteexec) · [Windows setup check](check.cmd)
 
-For DeepSeek Harness, mounting goes through the Cordis layer — see
-[`docs/dsh-setup.md`](docs/dsh-setup.md).
+## Offline reads and live editor operations
 
----
+| Path | When to use it | Requirements |
+| --- | --- | --- |
+| **T3D cache on disk** | Read saved Blueprints, Montages, AnimBPs, and other assets. Collect by asset path or scope and parse locally | `sync` uses `UnrealEditor-Cmd`. Cache hits work with the editor closed |
+| **Live editor** | Inspect unsaved graphs, apply Blueprint edits, control PIE or levels, and read live editor data | Unreal Editor running with **Project Settings → Plugins → Python → Enable Remote Execution** enabled |
+| **PIE runtime** | Read the actual Pawn, combat component, attachments, and active animation state | An active PIE session. `editor action=logs` can read log files offline |
 
-## Usage
-
-### Tell the AI what to implement
-
-Open the target Blueprint and graph in Unreal Editor, enable Python Remote Execution, and end
-PIE or simulation. Name the asset and graph, identify the entry point, describe each branch,
-and specify the edit scope and whether to save. For example, select the entry node and say:
-
-> Use ComboMCP to implement the attack condition in the open graph. Start at the selected
-> `TryAttack` event. Continue into the existing attack logic when `bCanAttack` is True and
-> end execution when it is False. Limit edits to this wiring and the new
-> nodes. I authorize editing and saving. After a successful compile and wiring review, save
-> the Blueprint and report the compile and disk readback results.
-
-For a read-only diagnosis, say “Inspect the graph and report your findings. No edits.” For a
-canvas review, say “Make the edit and compile, then leave it unsaved for me to review.”
-
-### Tools (28, four of which need the optional KBaseUE)
-
-The tool surface is deliberately small: tool definitions go into **every** model request.
-
-| Tool | Purpose |
-|---|---|
-| `status` | Engine / index / cache / write-policy status. Call this first on any connection error |
-| `sync` | Export assets into the T3D cache (headless commandlet). **Omitting `classes` means all assets** |
-| `project_map` | Asset map: counts by class, plus blueprint list |
-| `search` | Find assets by name |
-| `find_refs` | Asset references / dependencies |
-| `index` | Blueprint index: who calls a function, who reads/writes a variable |
-| `class_summary` | What's in a class (variables / functions / events / components / graphs) |
-| `graph_overview` | Nodes in a graph, and where its entries are |
-| `flow` | **Read execution logic** (defaults to `format=dsl` — an order of magnitude fewer tokens than JSON) |
-| `node_detail` | Pins and default values of a single node |
-| `montage` | Montage sections / notifies / timeline |
-| **`fx_notify_map`** | **FX notify audit**: each notify's current socket / offsets / bound sequence (pure T3D, no engine start) |
-| **`fx_mounts`** | **Available mounts**: bone names and sockets at that notify's frame (starts one headless engine) |
-| **`fx_solve_offset`** | **Offset solver**: given a target bone, returns the `SocketName` / `LocationOffset` / `RotationOffset` to type into the notify |
-| `anim_asset` | Anim sequences / blend spaces / PoseSearch databases |
-| `anim_calls` | Every montage-related call in a blueprint |
-| `diagnose` | **Combo diagnosis**: cross-checks blueprint call sites against animation timing |
-| `audit` | Node liveness analysis (needs real links; uses T3D by default) |
-| `reflect` | Fallback: see what engine reflection actually exposes |
-| `pie_state` | **Runtime state**: read the live PIE world (editor must be playing) |
-| **`asset`** | **Read any asset**: materials / material instances / textures / static meshes / skeletal meshes / levels / anything else |
-| **`help`** | **Basic-operations Q&A**: 10 topics, accepts natural-language queries |
-| **`editor`** | **Editor actions**: `capabilities` / `pie` / `level` / `actor` / `logs` |
-
-#### FX mount tools (plan B: hand you the numbers)
-
-`LocationOffset` / `RotationOffset` on an animation notify are expressed in **attach-point
-local space**, while what your eye wants is a position in **component space** — with a
-bone chain in between. That is why trial-and-error in the editor almost never converges.
-
-Worse, the engine is silent about two failure modes:
-
-- An empty **or misspelled** `SocketName` makes `GetSocketTransform` fall back to the
-  component transform (the character root) — the effect lands at the origin and **no
-  error is reported**;
-- A looping Niagara system makes `SpawnEffect` `return nullptr` outright, so adjusting
-  offsets does nothing.
-
-Three tools turn this into one calculation:
-
-```text
-fx_notify_map    → where this effect currently sits, its offsets, and which sequence/seconds it is bound to
-fx_mounts        → which bone/socket names exist at that frame (88 bones + 3 sockets measured)
-fx_solve_offset  → to place it on hand_r: what to put in SocketName / LocationOffset / RotationOffset
-```
-
-Measured (`AM_LightCombo01`, notify 0, target `hand_r`, current socket `Weapon`):
-
-```jsonc
-"current":   { "effect_position_cm": [-31.0088, -27.1564, 78.0717],
-               "distance_to_target_cm": 17.93 },
-"suggested": { "socket_name": "Weapon",
-               "location_offset": [-7.4659, 16.3025, 0.0],
-               "rotation_offset": [-20.6075, 133.8073, 132.5509] }
-```
-
-Copy those straight into the notify. One call costs about 12 seconds (one headless
-engine start).
-
-> It does **not** judge effect orientation. Which way a slash faces still needs a visual
-> tweak of `RotationOffset`'s Roll.
-
-#### What the three new tools answer
-
-**`asset`** — the reading range is no longer limited to blueprints and animation. It picks
-a semantic summariser per class:
-
-| Asset class | What you get |
-|---|---|
-| `Material` | Blend / shading model, **whether each input is a constant or which expression it is wired to**, declared parameters with defaults, expression breakdown |
-| `MaterialInstanceConstant` | Parent material, parameter overrides, property overrides |
-| `Texture2D` | Size, mips, source format, compression, sRGB, LODGroup |
-| `StaticMesh` | Material slots and names, bounds, collision type and profile, lightmap settings |
-| `SkeletalMesh` | Skeleton, material slots |
-| `World` (level) | Loaded levels, World Partition config, whether the level is partitioned |
-| Anything else | Generic view: readable properties (export noise stripped) + child-class histogram |
-
-**What it cannot read is stated explicitly**: mesh vertices, texture pixels, and the
-per-actor serialization of a level. The tool never returns a silent empty value that would
-make you think the asset is empty.
-
-**`help`** — topics: `install` `menu` `sync` `pie` `level` `logs` `remoteexec` `actions`
-`readorder` `troubleshoot`. Ask "how do I open PIE" or "where are the logs" directly.
-
-**`editor`** — editor actions. Write actions are off by default, see
-[Safety boundary](#safety-boundary).
-
-#### Optional: the knowledge-base four (requires a sibling `KBaseUE` plugin)
-
-These answer **"is this UE semantic actually true?", with a `file:line` to back it up.**
-They depend on `Plugins/KBaseUE`, which is **not part of this repository**.
-
-| Tool | Purpose |
-|---|---|
-| `engine_source` | Index of the whole UE 5.7 source: `symbol` / `read` / `usage` / `reflected` / `grep` / `files` / `status` |
-| `ue_docs` | Mirror of Epic's official 5.7 docs: `status` / `search` / `read` / `version_check` |
-| `engine_facts` | Distilled high-frequency traps, each with source line numbers |
-| `interface_check` | On a real interface asset: does this function become an **event** or a **function graph**? |
-
-**Without KBaseUE they return `{"error": "KBaseUE module not found", ...}` — that is
-degradation, not a crash.** The other 20 core tools keep working and the protocol layer is
-unaffected (`tools/mcp_protocol_test.py` section 9 verifies exactly this).
-
-### Recommended read order (coarse to fine)
-
-1. `status` — confirm channel and index state
-2. `project_map` — build overall context
-3. `class_summary` — what's inside one class
-4. `graph_overview` — which nodes exist, where the entries are
-5. `flow` (`format=dsl`) — read the actual logic
-6. `node_detail` — only once you've located a specific node
-
-### Two data paths
-
-Read tools default to `source="auto"`; the `source` field in the result tells you which
-path was taken. **On a cache hit everything is parsed locally** — millisecond latency,
-editor open or not.
-
-**`reflect` (engine reflection)** is fast but cannot see graph logic. Two layers of reason:
-
-```cpp
-// Engine/Source/Runtime/Engine/Classes/EdGraph/EdGraphNode.h
-TArray<UEdGraphPin*> Pins;          // ← not even a UPROPERTY()
-```
-
-And even having `UPROPERTY()` is not enough — Python's `get_editor_property` goes through
-`PropertyAccessUtil::CanGetPropertyValue`, which requires one of
-`CPF_Edit` / `CPF_BlueprintVisible` / `CPF_BlueprintAssignable`:
-
-```cpp
-// CoreUObject/Private/UObject/PropertyAccessUtil.cpp
-if (!InProp->HasAnyPropertyFlags(CPF_Edit | CPF_BlueprintVisible | CPF_BlueprintAssignable))
-    return FPropertyAccessResult::PermissionDenied(...);
-```
-
-A bare `UPROPERTY()` has none of the three, so it is rejected anyway. `UEdGraph::Nodes`,
-`UAnimMontage::CompositeSections`, `UAnimMontage::SlotAnimTracks` and
-`UBlueprint::NewVariables` are all in this category — **all `PermissionDenied` from Python**.
-
-**`t3d` (the engine's own text export)** can read what reflection cannot, because the
-export filter is looser: `FProperty::ShouldPort` only requires `CPF_Edit` under
-`PPF_PropertyWindow` (`Property.cpp`), so bare-`UPROPERTY()` members show up in T3D
-regardless.
-
-**So T3D is not a fallback — it is the more capable path.**
-
-### Three T3D format traps (measured, not guessed)
-
-Each of these makes a parser **silently produce wrong results**:
-
-1. **The file is UTF-8 with BOM.** Python 3's `\s` does not match `\ufeff`; without
-   stripping the BOM the root object on line 1 is lost and the object tree collapses
-   into several roots.
-2. **Export happens in two passes.** The second pass's `Begin Object` has **no `Class=`**,
-   and `LinkedTo` links appear *only* in that second pass. You must merge by `ExportPath`,
-   or every class name becomes `?` and all links vanish.
-3. **`MemberParent` is a full object path**, e.g.
-   `"/Script/CoreUObject.Class'/Script/Engine.Actor'"`. Naively taking the tail gives you
-   `Class`, not `Actor`.
-
-### Architecture: why two layers
-
-```
-┌─ Inside the editor (ue/) ── reflection reads + T3D export ──┐
-│  Only spun up by the commandlet when needed                 │
-└─────────────────────────────────────────────────────────────┘
-                    ↓  T3D text lands in cache/
-┌─ MCP process (engine/ + mcpserver/) ───────────────────────┐
-│  Pure-data parsing (t3d.py / graph_ir.py never import      │
-│  unreal) — milliseconds, works with the editor closed      │
-└────────────────────────────────────────────────────────────┘
-```
-
-`ue/t3d.py`, `ue/graph_ir.py`, `ue/montage_t3d.py` and `ue/anim_bp_t3d.py` are
-**pure-data modules** that never import `unreal`, so they can be loaded straight into the
-MCP process — that is the root reason "no editor required" works at all.
-
----
-
-## Repository layout
-
-```
-Plugins/ComboMCP/
-├── ComboMCP.uplugin        Plugin descriptor ("Modules": [] — no C++, no compilation)
-├── Content/Python/         UE plugin Python dir, auto-added to sys.path by the engine
-│   ├── init_unreal.py      Startup hook: load evidence + menu registration
-│   └── combomcp_editor.py  Tools → ComboMCP menu
-├── start_editor.cmd        Launch the editor (no special flags)
-├── check.cmd               One-shot self-check (first two steps need no editor)
-├── ue/                     Read-only scripts run inside the editor
-│   ├── t3d.py              [pure data] T3D text -> IR parser
-│   ├── graph_ir.py         [pure data] IR + exec-flow walk + DSL renderer
-│   ├── montage_t3d.py      [pure data] Montage timeline / window diagnosis
-│   ├── anim_bp_t3d.py      [pure data] AnimBP state machine reader
-│   ├── runtime.py          Defensive reflection reads
-│   ├── t3d_read.py         T3D export + read (editor side)
-│   ├── domain.py           Combo-domain diagnosis rules
-│   └── dispatch.py         Command dispatch + automatic path selection
-├── engine/                 MCP side (plain Python process)
-│   ├── offline.py          Offline reads: everything used on a cache hit
-│   ├── collector.py        Commandlet collector
-│   ├── bridge.py           Remote Execution bridge (optional path)
-│   ├── pure.py             Loads pure-data modules into the MCP process
-│   └── search.py           On-disk index cache
-├── mcpserver/              MCP protocol layer (zero dependencies)
-│   ├── server.py           JSON-RPC over stdio
-│   └── tools.py            Tool definitions and implementations
-├── tools/                  Tests and diagnostics (see below)
-├── cache/                  Generated: T3D cache (**not committed**, safe to delete)
-└── docs/
-```
-
-### Which `tools/` scripts are reusable
-
-| Script | Reusable? | Notes |
-|---|---|---|
-| `test_t3d.py` (60) | ✅ | Parser unit tests, synthetic samples |
-| `test_t3d_real.py` (54) | ✅ | Real engine-export regression, fixture shipped |
-| `test_wiring.py` (44) | ✅ | Module loading + command table wiring |
-| `mcp_protocol_test.py` (20) | ✅ | End-to-end MCP protocol |
-| `probe_plugin_load.py` | ✅ | Plugin acceptance: enabled-plugin list, menu API |
-| `probe_remote.py` | ✅ | Remote Execution channel probe |
-| `inspect_macro.py` | ✅ | Read any engine macro's internals (does it have side effects?) |
-| `inspect_var_refs.py` | ⚠️ | Defaults to the author's asset; pass args to use it on yours |
-| `dump_combo_graph.py` | ⚠️ | Same |
-| `test_e2e_offline.py` (23) | ⚠️ | Its asset list is the author's; run `sync` on matching assets first, or it fails |
-| `verify_all.py` / `wait_and_verify.py` | ❌ | Author's project-specific end-to-end checks; rewrite for your assets |
-
----
-
-## Tests
-
-**No editor required** (342 assertions total):
-
-```powershell
-$py = "<Engine>\Engine\Binaries\ThirdParty\Python3\Win64\python.exe"
-$root = "<Project>\Plugins\ComboMCP"
-
-& $py "$root\tools\test_t3d.py"             # 60
-& $py "$root\tools\test_t3d_real.py"        # 54
-& $py "$root\tools\test_wiring.py"          # 48
-& $py "$root\tools\mcp_protocol_test.py"    # 41
-& $py "$root\tools\test_asset_read.py"      # 73
-& $py "$root\tools\test_editor_actions.py"  # 66
-```
-
-The two new suites are worth explaining, because their whole value is in using real things:
-
-- **`test_asset_read.py`** fixtures are T3D exported from **a real UE 5.6.1 run**
-  (material / material instance / texture / static mesh / skeletal mesh / level / font).
-  The worst 1.3.0 defects — material data living on a `MaterialEditorOnlyData` child,
-  hex payloads in textures, trailing commas in structs — **cannot be caught by synthetic
-  samples at all**.
-- **`test_editor_actions.py`** uses a **fake `unreal` module** (exposing no editor
-  subsystem) to verify commandlet isolation: every action must return `_need_editor`
-  instead of trying — because trying was measured to kill the process with
-  `EXCEPTION_ACCESS_VIOLATION`.
-
-**Needs the engine, but not a running editor** (plugin acceptance):
-
-```powershell
-# UE truncates -Script at whitespace, so copy the script to a space-free path first
-Copy-Item "$root\tools\probe_plugin_load.py" "C:\Temp\probe_plugin_load.py" -Force
-& "<Engine>\Engine\Binaries\Win64\UnrealEditor-Cmd.exe" `
-    "<Project>\<Project>.uproject" `
-    -run=PythonScript -Script=C:\Temp\probe_plugin_load.py `
-    -unattended -nosplash -nop4 -nullrhi -stdout
-```
-
-Results land in `cache/plugin/probe_result.json`, verifying: the plugin appears in the
-engine's enabled-plugin list, `Content/Python` reached `sys.path`, and the menu API call
-chain works.
-
----
-
-## Troubleshooting
-
-**Plugin not listed under Edit → Plugins**
-
-Plugins load only at **startup** — restart the editor after installing. Still missing?
-Confirm `ComboMCP.uplugin` sits in `<Project>/Plugins/ComboMCP/` and that
-`EnabledByDefault` is `true`.
-
-**Did the engine actually load the plugin?**
-
-Check `cache/plugin/loaded.json` — the engine rewrites it on every startup — or run
-`check.cmd`.
-
-**`sync` is slow**
-
-Every call cold-starts the engine and loads the project. **Batch many assets per call**,
-don't call it once per asset. Already-cached assets are skipped unless `force=true`.
-
-**I changed a blueprint but still get the old logic**
-
-The T3D cache reads the `.uasset` on disk. Make sure you **saved** (Ctrl+S), then `sync`
-again. Conversely, unsaved editor changes are invisible to the commandlet — that case
-requires Remote Execution (next item).
-
-**`status` reports Remote Execution unresponsive**
-
-First ask whether it matters: the main read path is the T3D cache and needs no running
-editor. Only reading **unsaved** changes needs that channel. If you do need it:
-
-1. Tick **Project Settings → Plugins → Python → Enable Remote Execution?** (off by
-   default; it is the only switch, has no command-line flag, and applies immediately)
-2. Make sure the editor has finished loading
-3. With several engine instances open, the plugin prefers the one holding your project
-
-**A field reads as empty, `_diag` shows a miss**
-
-That `UPROPERTY` isn't exposed to Python in your engine build. Use `reflect` to see what
-the engine actually exposes. This is expected by design: `UEdGraphPin` moving from struct
-to UObject was a breaking change, and hardcoded readers inevitably fail silently across
-version drift.
-
----
+`sync` collects all asset classes in the scope when `classes` is omitted. Start with a few assets or a specific directory. Use `sync force=true` to refresh saved assets. [Cache collection](docs/quickstart.md#sync) · [Read order](docs/quickstart.md#readorder)
 
 ## Safety boundary
 
-The read tools use cached or live data. Apply and save require `confirm=true`
-or `COMBO_ALLOW_ACTIONS=1` on the MCP server. Graph writes require the current
-asset, focused graph and revision from `inspect` or the most recent `apply`.
+- **Read tools collect project data.** Live `inspect` and `review` can also switch the graph tab or focus the canvas.
+- **Writes require authorization.** Pass `confirm=true` separately to `apply` and `save`, or configure `COMBO_ALLOW_ACTIONS=1` for persistent authorization. The write policy also covers PIE start, stop and simulation, and level load, new, save and add.
+- **A write targets the current graph.** The editor checks the `.uproject`, Blueprint, graph tab, and latest `revision`. Each successful edit creates one undo entry. Graph writes pause during PIE or simulation.
+- **Compile, save and runtime checks report different results.** `apply` returns compile diagnostics. `saved` reports the UE package save, and `readback.ok` reports the disk comparison. Use PIE to verify gameplay behavior.
 
-`apply` compiles a single undoable graph change. `save` writes the open Blueprint
-package and verifies node IDs, positions, comment titles and links by exporting
-the package from disk.
+[Write authorization](docs/quickstart.md#actions) · [Blueprint editing workflow](docs/quickstart.md#blueprint_edit)
 
-### How to verify reading really writes nothing
+## Compatibility
 
-Run `sync`, then check whether any file under `Content/` has a modification time later
-than when the collection started.
+| Environment | Verification |
+| --- | --- |
+| **UE 5.7.4 · Windows** | Win64 Development Editor build and live graph editing have verification records |
+| **UE 5.6.1 · Windows** | Win64 Development Editor module builds. Asset reads and basic editor actions were verified in v1.3 |
+| UE 5.0–5.5 / Linux / macOS | Unverified for the current version |
+| UE 4.x | Unsupported |
+| DeepSeek Harness | MCP connection verified. Other clients can use the standard stdio configuration |
 
-### Editor actions need Remote Execution enabled
+The toolkit selects the engine from the project's `.uproject` `EngineAssociation`. Run `status` to check the engine path and version. Set `COMBO_UE_ENGINE` if you need to specify the engine root. [Version history and verification](CHANGELOG.md)
 
-Level / PIE / actor actions must run **inside the editor process**, over UE's Python Remote
-Execution channel. That channel is **off by default**:
+## Documentation and source
 
-1. In the editor: **Project Settings → Plugins → Python → Enable Remote Execution?**
-2. It takes effect immediately, no restart needed.
-3. Confirm `bridge.connected` is `true` via `status`.
-
-The setting has no command-line flag and no console command — which is exactly why this
-plugin **does not make Remote Execution its main reading path**. Asset reading runs off the
-T3D cache. **`logs` doesn't need it either**: it reads the log files from disk.
-
----
-
-## License
-
-[MIT](LICENSE) · See [CHANGELOG.md](CHANGELOG.md) for version history
+- [Quickstart and troubleshooting](docs/quickstart.md)
+- [DeepSeek Harness setup](docs/dsh-setup.md)
+- [UE 5.7 knowledge-base Skill](skills/ue57-knowledge-base/SKILL.md)
+- [MCP server and tools](mcpserver) · [UE Editor module](Source/ComboMCPEditor) · [Tests and diagnostics](tools)
+- [Changelog](CHANGELOG.md) · [MIT license](LICENSE)

@@ -1,4 +1,4 @@
-# ComboMCP 操作手册
+# Blueprint Agent Toolkit for Unreal Engine 操作手册
 
 这个文件是 `help` 工具的数据源。它按 `## ` 小节切分，小节标题就是 topic 名
 （见文末「topic 与别名的对应」）。改这里不需要动代码——`help` 每次读取本文件。
@@ -11,11 +11,11 @@
 
 ### 装进一个 UE 项目
 
-1. 把整个 `ComboMCP` 文件夹复制到 `<你的UE项目>/Plugins/ComboMCP/`。
+1. 把包含 `ComboMCP.uplugin` 的目录命名为 `ComboMCP`，复制到 `<你的UE项目>/Plugins/ComboMCP/`。
    - 目录层级必须正好是 `<项目>/Plugins/ComboMCP`：代码靠"上溯两级"反推项目根，
      放错层级会找不到 `.uproject`。
 2. 使用与引擎和平台匹配的 `ComboMCPEditor` 二进制。源码安装先构建项目的 Development Editor 目标。
-3. 重启编辑器，打开 **Edit → Plugins** 查看 **Combo Blueprint MCP**。
+3. 重启编辑器，打开 **Edit → Plugins** 查看 **Blueprint Agent Toolkit for Unreal Engine**。`v1.4.0` 源码包显示 **Combo Blueprint MCP**。
 
 `.uplugin` 的 `EnabledByDefault: true` 会启用插件。MCP 服务使用 UE 自带的 Python。
 

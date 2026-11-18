@@ -1,7 +1,7 @@
-# 把 ComboMCP 挂进 DeepSeek Harness
+# 在 DeepSeek Harness 中接入 Blueprint Agent Toolkit
 
-ComboMCP 是标准 MCP stdio server，**任何 MCP 客户端都能用**。这份文档记录在 DSH 上
-挂载的确切方式；其他客户端看 [README](../README.md) 的通用配置即可。
+Blueprint Agent Toolkit for Unreal Engine（原名 ComboMCP）通过标准 MCP stdio 服务接入客户端。
+这里记录 DeepSeek Harness 的配置步骤。其他客户端见 [README](../README.md#安装) 的通用配置。
 
 > **路径约定**
 > `<引擎>` = UE 安装目录（如 `C:\Program Files\Epic Games\UE_5.7`）

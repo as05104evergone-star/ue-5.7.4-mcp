@@ -56,19 +56,13 @@ DEFAULT_PROTOCOL = "2024-11-05"
 MAX_TEXT_CHARS = 220_000
 
 INSTRUCTIONS = """\
-这是 ComboMCP，提供 Unreal Engine 蓝图与动画资产读取、战斗连招诊断和实时蓝图编辑。
+这是 Blueprint Agent Toolkit for Unreal Engine（原名 ComboMCP），提供 Unreal Engine 蓝图与动画资产读取、战斗连招诊断和实时蓝图编辑。
 
 ## 它连接到哪里（两条路径，互不依赖）
-它**不需要编辑器一直开着**，也不需要在编辑器里勾选任何选项：
-
-1. **T3D 缓存（主力）** —— 蓝图结构、Montage 时序、AnimBP 状态机都在
-   `Plugins/ComboMCP/cache/t3d/` 里。命中缓存时全部本地解析，毫秒级返回，
-   编辑器开不开都一样。缓存由 `sync` 工具采集：它以
-   `UnrealEditor-Cmd -run=PythonScript` 的方式**另起一个进程**把资产导成 T3D
-   文本，与编辑器内的任何通道设置无关，编辑器开着也能正常跑。
-2. **Unreal Editor 反射（可选）** —— 只有在缓存里没有该资产、又需要实时读取时
-   才会用到。它走引擎的 Python Remote Execution 通道，需要编辑器在运行；
-   该通道默认关闭，没开也不影响上面那条主力路径。
+1. **T3D 缓存**。用 `sync` 通过 `UnrealEditor-Cmd -run=PythonScript` 把已保存资产导出到
+   `Plugins/ComboMCP/cache/t3d/`。缓存命中时，本地读取无需运行编辑器。
+2. **实时 Unreal Editor**。实时蓝图编辑、在线反射、PIE 状态与在线编辑器动作需要启动 UE
+   并启用 Python Remote Execution。`editor action=logs` 可从磁盘离线读取日志。
 
 缓存读磁盘上的 `.uasset`。蓝图尚未保存时，用 `blueprint_edit action=inspect` 读取已打开图页。
 
