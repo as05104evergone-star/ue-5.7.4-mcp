@@ -1,6 +1,6 @@
 # ComboMCP
 
-**Read Unreal Engine assets into compact text an AI can actually reason about.**
+**Give your AI the tools to read Unreal Engine assets and implement Blueprint logic in the editor.**
 
 **English** | [中文](README.md)
 
@@ -9,13 +9,10 @@ An MCP server that exports blueprint graphs, montage timing, AnimBP state machin
 answer questions like *"why won't my combo chain continue?"*, *"what does this graph
 actually do?"* or *"where does this material's roughness come from?"* with **evidence**.
 
-It also handles **basic operations**: read logs, inspect levels, drive PIE, load and save
-levels. Those run in the editor process, and **write actions are off by default** — see
-[Safety boundary](#safety-boundary).
-
-> **Reading tools are read-only.** No asset writes, no compilation, no saving, no node
-> creation. The only things that change state are 7 explicitly authorised editor actions,
-> and they are blocked by default.
+Starting with v1.4, an AI client can use `blueprint_edit` to implement logic in an open K2 graph.
+Give it the target, expected behavior, edit scope and save instructions. It can inspect the
+live graph, choose nodes, connect pins, lay out and comment the edited region, and compile.
+With save authorization, it can verify the saved graph on disk. [Graph editing workflow](docs/quickstart.md#blueprint_edit)
 
 ---
 
@@ -24,8 +21,8 @@ levels. Those run in the editor process, and **write actions are off by default*
 | Component | Status |
 |---|---|
 | **Unreal Engine 5.7.4** | ✅ **Tested** |
-| **Unreal Engine 5.6.1** | ✅ **Tested** in a freshly created, isolated verification project: plugin load, T3D export of eight asset classes, `sync` collection, offline `asset` reads, log reading, write-action gating |
-| UE 5.0 – 5.5 | ⚠️ **Untested.** The APIs it relies on (`ToolMenuEntryScript`, `PluginBlueprintLibrary`, `unreal.uclass`, `get_editor_subsystem`) all landed in UE 5.0, so it should work |
+| **Unreal Engine 5.6.1** | v1.4 Win64 Development Editor build passed. v1.3 read and editor actions tested. Live graph editing tested on 5.7.4. |
+| UE 5.0 – 5.5 | v1.4 unverified |
 | UE 4.x | ❌ **Unsupported.** Different menu API and different pin serialization format |
 | **Windows** | ✅ **Tested.** The `.cmd` scripts and engine path resolution are verified on Windows |
 | Linux / macOS | ⚠️ **Untested.** The Python side now derives engine paths per platform (no hardcoded `Win64`), but the `.cmd` scripts have no equivalent — run the commands by hand |
@@ -37,61 +34,9 @@ levels. Those run in the editor process, and **write actions are off by default*
 5.6 `UnrealEditor-Cmd`, a 5.7 project with 5.7. `status` reports what it resolved
 (`project_association` / `engine_root` / `engine_version`).
 
-**It does NOT need**: Node.js, a system Python, a compiler toolchain, a C++ plugin, or any
-third-party Python package.
-
-**It DOES need**: the Python bundled with UE (`Engine/Binaries/ThirdParty/Python3/`,
-shipped with every UE 5.x).
-
-Editor actions (level / PIE / actor) additionally need Remote Execution enabled — that
-setting is off by default, see [Safety boundary](#safety-boundary).
-
----
-
-## How it differs from similar projects
-
-Data read live via `gh api` on 2026-09-28, not estimated:
-
-| Project | ★ | Approach | Compilation | Editor must stay open | Can edit assets |
-|---|---|---|---|---|---|
-| [mirno-ehf/ue5-mcp](https://github.com/mirno-ehf/ue5-mcp) | 75 | C++ plugin + local HTTP + MCP wrapper | Yes | Yes (headless fallback) | Yes |
-| [ZiggyMar/unreal-mcp](https://github.com/ZiggyMar/unreal-mcp) | 42 | C++ editor plugin + Node/TS server | Yes | Yes | Yes |
-| [cutehusky/ue5-mcp](https://github.com/cutehusky/ue5-mcp) | 13 | C++ plugin exposing a web API + FastMCP | Yes | Yes | Yes |
-| [Cawb07/ue5-mcp](https://github.com/Cawb07/ue5-mcp) | 1 | C++ | Yes | Yes | Yes |
-| Epic's official Unreal MCP | — | Built into the engine | No | Yes | Yes |
-| **ComboMCP** | — | **Pure Python, `"Modules": []`** | **No** | **No** | **Reads never write; 7 opt-in editor actions** |
-
-> Epic's official Unreal MCP only exists from **UE 5.8**. Verified on 5.7.4: there is no
-> MCP-related plugin anywhere in the engine's plugin directory.
-
-### Where this project is the better fit
-
-* **You want to understand and ask questions, not let an AI touch your assets.** Read-only
-  is a deliberate safety boundary, not a missing feature — for "why won't this combo chain
-  continue?", being unable to write removes the risk entirely.
-* **You don't want to install a toolchain.** The alternatives all require compiling a C++
-  plugin with Visual Studio, and most also pull in Node.js or a `pip install`-able
-  dependency such as FastMCP. This plugin has zero compilation and zero third-party deps.
-* **You want to ask questions with the editor closed.** The main read path is a local T3D
-  cache; it behaves identically whether or not the editor is running.
-* **You're on UE 5.7.**
-
-### Where it is the wrong tool
-
-* **You want an AI to edit blueprints.** Use
-  [ZiggyMar/unreal-mcp](https://github.com/ZiggyMar/unreal-mcp) or
-  [mirno-ehf/ue5-mcp](https://github.com/mirno-ehf/ue5-mcp) — they create nodes, wire pins
-  and change defaults. This plugin **cannot** do that and does not intend to.
-* **You need 5.6 or 5.8 coverage.** ZiggyMar targets 5.6/5.8 specifically; this one has
-  only been tested on **5.7.4**.
-* **You want a large tool surface.** ZiggyMar ships 101 tools; this one ships 27
-  (deliberately — tool definitions go into every model request).
-
-The key decision: **Remote Execution is not the main path**. That switch
-(`bRemoteExecution`) defaults to off and has no command-line flag and no console
-command — a human has to tick a box in the editor settings. Building the primary read
-path on a manually-toggled channel is a bad trade; `UnrealEditor-Cmd -run=PythonScript`
-has no such precondition.
+The MCP server uses Unreal's bundled Python. Version 1.4 requires a matching
+`ComboMCPEditor` binary for the engine and platform. For source installs, build the
+project's Development Editor target. Live editor tools use the Remote Execution setting.
 
 ---
 
@@ -99,7 +44,8 @@ has no such precondition.
 
 ### 1. Drop the plugin into your project
 
-Copy the whole `ComboMCP` folder to:
+Download and extract the release source archive. Rename the directory containing
+`ComboMCP.uplugin` to `ComboMCP` and place it at:
 
 ```
 <YourUEProject>/Plugins/ComboMCP/
@@ -109,9 +55,9 @@ No `.uproject` edit needed — `EnabledByDefault: true` in the `.uplugin` handle
 The plugin always lives at `<project>/Plugins/ComboMCP`; the code derives the project
 root from that, so **moving to another project is just a copy**.
 
-### 2. Restart the editor
+### 2. Build the module and restart the editor
 
-Plugins load only at **startup**. After restarting you should see **Combo Blueprint MCP**
+For source installs, build the Development Editor target before opening the project. After restarting you should see **Combo Blueprint MCP**
 under **Edit → Plugins**, and a **Tools → ComboMCP** menu.
 
 One line in the `.uplugin` solves a problem you would otherwise hit:
@@ -160,7 +106,22 @@ For DeepSeek Harness, mounting goes through the Cordis layer — see
 
 ## Usage
 
-### Tools (27, four of which need the optional KBaseUE)
+### Tell the AI what to implement
+
+Open the target Blueprint and graph in Unreal Editor, enable Python Remote Execution, and end
+PIE or simulation. Name the asset and graph, identify the entry point, describe each branch,
+and specify the edit scope and whether to save. For example, select the entry node and say:
+
+> Use ComboMCP to implement the attack condition in the open graph. Start at the selected
+> `TryAttack` event. Continue into the existing attack logic when `bCanAttack` is True and
+> end execution when it is False. Limit edits to this wiring and the new
+> nodes. I authorize editing and saving. After a successful compile and wiring review, save
+> the Blueprint and report the compile and disk readback results.
+
+For a read-only diagnosis, say “Inspect the graph and report your findings. No edits.” For a
+canvas review, say “Make the edit and compile, then leave it unsaved for me to review.”
+
+### Tools (28, four of which need the optional KBaseUE)
 
 The tool surface is deliberately small: tool definitions go into **every** model request.
 
@@ -486,37 +447,13 @@ version drift.
 
 ## Safety boundary
 
-**Reading tools are read-only.** No writes, no compilation, no saving, no asset creation.
-T3D export goes through `ObjectExporterT3D`, pure serialization; the commandlet only calls
-`unreal.load_asset()` and the exporter.
+The read tools use cached or live data. Apply and save require `confirm=true`
+or `COMBO_ALLOW_ACTIONS=1` on the MCP server. Graph writes require the current
+asset, focused graph and revision from `inspect` or the most recent `apply`.
 
-**Only 7 write actions exist, and they are off by default:**
-
-| Write action | What it does |
-|---|---|
-| `editor action=pie sub=start` / `stop` / `simulate` | Enter / leave PIE |
-| `editor action=level sub=load` / `new` / `save` / `add` | Load / create / save a level, add a sublevel |
-
-Enable them either way:
-
-- **Environment variable** (persistent): set `COMBO_ALLOW_ACTIONS=1`, then restart the MCP
-  client (the MCP server is a subprocess; it reads the variable at startup).
-- **Single call**: pass `confirm=true`.
-
-When not authorised they return a payload tagged `_actions_blocked` instead of failing
-silently.
-
-**Two gates, not one check.** The MCP side (`engine/actions.py`) stops accidental model
-calls; the editor side (`ue/editor_actions.py::_guard_write`) stops commands sent straight
-into the editor over Remote Execution, bypassing MCP. The second gate is necessary —
-that channel is open by design, so the outer layer alone does not count.
-
-**Deliberately not supported** (not "not yet", but by design):
-
-- **Running arbitrary console commands.** That hands over the whole engine console.
-- **Saving arbitrary assets.** Only the explicit `level sub=save`, which saves the current
-  level and needs authorisation.
-- **Creating / modifying / deleting assets.**
+`apply` compiles a single undoable graph change. `save` writes the open Blueprint
+package and verifies node IDs, positions, comment titles and links by exporting
+the package from disk.
 
 ### How to verify reading really writes nothing
 

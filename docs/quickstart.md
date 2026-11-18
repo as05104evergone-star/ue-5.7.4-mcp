@@ -14,12 +14,10 @@
 1. 把整个 `ComboMCP` 文件夹复制到 `<你的UE项目>/Plugins/ComboMCP/`。
    - 目录层级必须正好是 `<项目>/Plugins/ComboMCP`：代码靠"上溯两级"反推项目根，
      放错层级会找不到 `.uproject`。
-2. **重启编辑器。** 插件只在启动时加载，热重载对它无效。
-3. 重启后在 **Edit → Plugins** 里应能看到 **Combo Blueprint MCP**。
+2. 使用与引擎和平台匹配的 `ComboMCPEditor` 二进制。源码安装先构建项目的 Development Editor 目标。
+3. 重启编辑器，打开 **Edit → Plugins** 查看 **Combo Blueprint MCP**。
 
-不需要改 `.uproject`——`.uplugin` 里 `EnabledByDefault: true` 会自行生效。
-不需要编译：`.uplugin` 的 `"Modules": []` 表示它**不含 C++**。
-不需要 Node.js，也不需要系统 Python：它用 UE 自带的 Python。
+`.uplugin` 的 `EnabledByDefault: true` 会启用插件。MCP 服务使用 UE 自带的 Python。
 
 ### 接进 MCP 客户端
 
@@ -219,8 +217,7 @@ Python Remote Execution 通道。这个通道**默认关闭**，必须手工打�
 
 ## actions
 
-**写操作默认是关闭的。** 这条边界是刻意的：读资产占了日常使用的绝大多数，
-不该为了少数场景让每一次问答都带着"能改我项目"的能力。
+**写操作默认需要授权。** 从 v1.4 起，除了 PIE 和关卡动作，AI 也可以在授权范围内写入蓝图图表。
 
 ### 哪些算写操作
 
@@ -228,25 +225,82 @@ Python Remote Execution 通道。这个通道**默认关闭**，必须手工打�
 |---|---|
 | `pie sub=start` / `pie sub=stop` / `pie sub=simulate` | 是 |
 | `level sub=load` / `new` / `save` / `add` | 是 |
-| 其余全部（`logs`、`level sub=current/list`、`actor`、所有读取类工具） | 否 |
+| `blueprint_edit action=apply` / `save` | 是 |
+| `blueprint_edit action=inspect` / `review`、`logs`、`level sub=current/list`、`actor`、读取类工具 | 否 |
 
 ### 怎么打开
 
 任选其一：
 
-1. **环境变量**（推荐，长期生效）：设 `COMBO_ALLOW_ACTIONS=1`，然后重启 MCP 客户端
+1. **环境变量**（长期生效）：设 `COMBO_ALLOW_ACTIONS=1`，然后重启 MCP 客户端
    （MCP 服务是子进程，环境变量在它启动时读取）。
 2. **单次授权**：调用时传 `confirm=true`，只对这一次调用生效。
 
-没授权时写操作会返回一条带 `_actions_blocked` 的说明，而不是静默失败。
+没授权时写操作会返回 `_actions_blocked`，并列出授权方式。
 
-### 明确不做的事
+---
 
-- **不执行任意 console 命令。** 那等于把整个引擎控制台交出去，边界会失控。
-- **不保存任意资产。** 只有显式 `level sub=save`（保存当前关卡，且需要授权）。
-- **不创建/修改/删除资产。** 顶点级编辑、材质改参数这类操作不在范围内。
+## blueprint_edit
 
-本插件**只读部分的承诺仍然成立**：读取类工具不写入、不编译、不保存。
+<a id="blueprint-edit-prompts"></a>
+
+### 怎么下指令
+
+把蓝图需求当成一段交付说明。写清楚下面四件事，节点类型、节点 GUID 和引脚内部名可以交给 AI 从现场图里查。
+
+| 写什么 | 怎么说 |
+|---|---|
+| 目标 | 给 `/Game/.../BP_名称` 和 `EventGraph` 或函数图名。也可以先在 UE 里打开目标图页并选中入口节点 |
+| 行为 | 说清楚从哪个事件、节点或引脚接入，用哪些已有变量或函数，各分支接到哪里 |
+| 范围 | 指定可改的节点、连线和可移动范围。需要沿用已有排版时，提供参考图页或注释区域 |
+| 交付 | 指定只检查、改图编译后等你复核，或编译和复核通过后直接保存并回读 |
+
+**只检查。**
+
+> 用 ComboMCP 读取当前蓝图的事件图，检查我选中的攻击入口为什么没有走到播放 Montage。
+> 输出执行链、卡住的引脚和修改建议。只读检查。
+
+**让 AI 直接改图并保存。**
+
+> 用 ComboMCP 直接修改 `/Game/Combat/BP_PlayerCombat` 的 `EventGraph`。从已有的 `TryAttack`
+> 事件出口插入 Branch，条件用已有的 `bCanAttack`。True 接回原来的攻击执行链，False 留空。
+> 修改范围限于这个入口和新增节点，新增节点在入口右侧排开，加注释「检查攻击条件」。
+> 我授权本次编辑和保存。编译通过、复核两条分支后保存，并报告改了哪些节点和连线、编译结果、磁盘回读是否通过。
+
+**改图编译，留在画布上复核。**
+
+> 用 ComboMCP 执行上面的改图范围，只授权改图和编译。做完把画布定位到新增的 Branch，
+> 输出编译结果，保持未保存，等我在 UE 里复核。
+
+路径、图名、事件名和变量名换成项目里的实际名称。「我授权编辑和保存」表示这项任务允许两步，
+客户端仍按 [写操作授权](#actions) 调用工具。单次授权时，`apply` 和 `save` 各带一次 `confirm=true`。
+`save` 保存整个当前 Blueprint 包，这个蓝图里其他尚未保存的修改也会一起落盘。
+
+### 工具执行步骤
+
+1. 打开目标 Blueprint 和图页。在线编辑用 **Project Settings → Plugins → Python → Enable Remote Execution**。
+2. 调用 `blueprint_edit {"action":"inspect"}`，取到 `asset_path`、`graph`、`revision`、节点 GUID 和引脚。节点列表可用 `scope` 或 `next_offset` 分页查看。参考页也可以用 `inspect` 读取。传 `asset_path`、`graph` 和 `open_graph=true` 可以切到已打开 Blueprint 的指定图页。
+3. 调用 `apply`，带上目标三项和 `confirm=true`。一次提交节点、引脚、位置和注释。UE 按 K2 Schema 校验连线，编译失败时尝试撤回整批并返回 `rolled_back` 和编译诊断。
+4. 调用 `review`，把 `apply` 返回的 `affected` 给 `scope`。可传 `focus` 定位到节点。复核画布上的分支、重叠和绕线。遮挡探测用节点边缘间的直线估算，实际曲线以 UE 画布为准。
+5. 任务授权落盘时，按修整后的最新 `revision` 调用 `save`，单次授权同样传 `confirm=true`。工具保存当前 Blueprint 包，再从磁盘导出 T3D 核对节点 GUID、坐标、注释标题和连线。`saved` 是 UE 的保存结果，`readback.ok` 是独立回读的比对结果。运行表现可另用 PIE 验收。
+
+### 一次提交的字段
+
+| 字段 | 用法 |
+|---|---|
+| `nodes` | 用 `$别名` 标记新节点。支持函数调用、变量读写、分支、序列、宏、动态转换和重路由 |
+| `connect`、`disconnect` | 每条给 `from`、`out`、`to`、`in`。已有节点用 GUID。引脚用 GUID 或精确内部名。覆盖连线前先列出需要断开的线 |
+| `defaults` | 给未连接的可编辑输入写 `value` 或对象路径 `object` |
+| `moves`、`arrange` | 指定位置，或把指定已有节点加入自动排版。未给坐标的新节点自动排版 |
+| `comments` | 每组给短中文 `title` 与 `nodes`。框的尺寸随组内节点计算 |
+| `route_data` | 默认打开。符合间距条件时，为本次新接入的多个数据输入加一段共用的重路由 |
+
+排版沿用 `PrepareAttackAssist` 的走线方式。白线从左到右，`ForEachLoop.Completed` 走下方，纯数据节点靠近消费者，注释按动作分组。显式坐标可用于复核后的局部修整。
+
+一次 `apply` 对应一个 UE 撤销项。撤销或重做后，若 UE 标记为待编译，先编译，再用 `inspect` 取新 revision。PIE 和模拟运行中，UE 图表写入暂停。
+
+当前编辑范围是**已有 Blueprint 的 K2 图页**。函数、变量和宏节点引用项目或引擎中已有的声明。
+新建资产、添加函数或变量声明、新建事件入口和删除现有节点需在 UE 中完成。
 
 ---
 
@@ -331,5 +385,6 @@ Remote Execution 没打开。见 topic `remoteexec`。
 | `logs` | 日志、报错、log、output log |
 | `remoteexec` | 远程执行、连不上、通道、引擎选择、版本 |
 | `actions` | 写操作、权限、安全、开关、能不能改 |
+| `blueprint_edit` | 蓝图编辑、建节点、接线、排线、注释、撤销 |
 | `readorder` | 读什么、先读哪个、工具清单、asset |
 | `troubleshoot` | 排查、报错、没生效、读不到 |

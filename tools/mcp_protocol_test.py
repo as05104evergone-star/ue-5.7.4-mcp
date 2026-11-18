@@ -145,7 +145,7 @@ def main():
         #   asset  —— 读任意资产的统一入口（材质/贴图/网格/关卡/通用）
         #   help   —— 基础操作答疑（本地手册）
         #   editor —— PIE / 关卡 / Actor / 日志
-        extra_tools = {"asset", "help", "editor"}
+        extra_tools = {"asset", "help", "editor", "blueprint_edit"}
         # 知识库四件套依赖**可选的** Plugins/KBaseUE（兄弟目录，不在本仓库里）。
         #
         # 但注意：**它们是静态注册的**——`_TOOLS` 里永远有这 4 个，KBaseUE 在不在

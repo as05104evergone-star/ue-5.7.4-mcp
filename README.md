@@ -1,6 +1,6 @@
 # ComboMCP
 
-**把 Unreal Engine 的资产，读成 AI 能真正理解的紧凑文本。**
+**让 AI 读懂 Unreal Engine 资产，并按你的指令直接编写蓝图逻辑。**
 
 [English](README.en.md) | **中文**
 
@@ -8,11 +8,9 @@
 导出成可离线解析的 T3D 文本，让模型能回答"为什么连招接不上""这段逻辑到底怎么走"
 "这个材质的粗糙度是从哪来的"这类问题——并且给出**带证据**的答案。
 
-它还能做**基础操作**：读日志、查关卡、控制 PIE、开关卡。这类动作走编辑器进程，
-**写操作默认关闭**，见下面的[安全边界](#安全边界)。
-
-> **读取类工具只读。** 不写资产、不编译、不保存、不创建节点。
-> 唯一会改状态的是显式授权的编辑器动作（7 个），且默认被挡住。
+从 v1.4 起，AI 可以用 `blueprint_edit` 在已打开的 K2 蓝图图页里自主实现逻辑。你给出目标、
+预期行为、可改范围和保存要求，AI 读取现有图，选节点、接引脚、局部排版、加注释并编译。
+授权保存后，工具还会从磁盘回读验证。[直接复制指令](docs/quickstart.md#blueprint-edit-prompts)
 
 ---
 
@@ -21,8 +19,8 @@
 | 组件 | 状态 |
 |---|---|
 | **Unreal Engine 5.7.4** | ✅ **实测** |
-| **Unreal Engine 5.6.1** | ✅ **实测**（在一个新建的隔离验证项目上跑通：插件加载、八类资产 T3D 导出、`sync` 采集、`asset` 离线读取、日志读取、写操作授权门） |
-| UE 5.0 – 5.5 | ⚠️ **未实测**。所依赖的 API（`ToolMenuEntryScript`、`PluginBlueprintLibrary`、`unreal.uclass`、`get_editor_subsystem`）都是 UE 5.0+ 引入，理论可用 |
+| **Unreal Engine 5.6.1** | v1.4 Win64 Development Editor 模块编译通过。读取和基础编辑器操作有 v1.3 实测记录，蓝图编辑流程在 5.7.4 实测 |
+| UE 5.0 – 5.5 | v1.4 待验证 |
 | UE 4.x | ❌ **不支持**。菜单 API 与引脚序列化格式都不同 |
 | **Windows** | ✅ **实测**。`.cmd` 脚本与引擎路径推导都按 Windows 验证过 |
 | Linux / macOS | ⚠️ **未实测**。Python 侧已改为按平台推导引擎路径（不再写死 `Win64`），但 `.cmd` 脚本需你自行执行等价命令 |
@@ -34,52 +32,10 @@
 去采集，5.7 的项目用 5.7。`status` 会回报解析结果（`project_association` /
 `engine_root` / `engine_version`），方便你确认没搞错。
 
-**它不需要**：Node.js、系统 Python、编译工具链、C++ 插件、任何第三方 Python 包。
+MCP 服务使用 UE 自带的 Python。安装 v1.4 需要与当前引擎、平台匹配的
+`ComboMCPEditor` 模块二进制。使用源码安装时先构建项目的 Development Editor 目标。
 
-**它需要**：UE 自带的 Python（`Engine/Binaries/ThirdParty/Python3/`，UE 5.x 都自带）。
-
-编辑器动作（关卡 / PIE / Actor）另需开启 Remote Execution——该开关默认关闭，
-见 [远程执行开关](#编辑器动作需要打开-remote-execution)。
-
----
-
-## 同类项目与定位差异
-
-数据取于 2026-09-28（`gh api` 实时读取，非估计）：
-
-| 项目 | ★ | 实现方式 | 需编译 | 需编辑器常开 | 能编辑资产 |
-|---|---|---|---|---|---|
-| [mirno-ehf/ue5-mcp](https://github.com/mirno-ehf/ue5-mcp) | 75 | C++ 插件 + 本地 HTTP + MCP wrapper | 是 | 是（关闭时可转无头） | 是 |
-| [ZiggyMar/unreal-mcp](https://github.com/ZiggyMar/unreal-mcp) | 42 | C++ 编辑器插件 + Node/TS 服务 | 是 | 是 | 是 |
-| [cutehusky/ue5-mcp](https://github.com/cutehusky/ue5-mcp) | 13 | C++ 插件暴露 Web API + FastMCP | 是 | 是 | 是 |
-| [Cawb07/ue5-mcp](https://github.com/Cawb07/ue5-mcp) | 1 | C++ | 是 | 是 | 是 |
-| Epic 官方 Unreal MCP | — | 引擎内置 | 否 | 是 | 是 |
-| **ComboMCP** | — | **纯 Python，`"Modules": []`** | **否** | **否** | **否（刻意只读）** |
-
-> Epic 官方的 Unreal MCP 从 **UE 5.8** 起才有。这一点在 5.7.4 上验证过：引擎插件目录里
-> 没有任何 MCP 相关插件。
-
-### 我们更适合什么
-
-* **你只想"读懂 + 答疑"，不想让 AI 碰你的资产。** 只读是刻意的安全边界，不是能力缺失——
-  对"这个连招为什么接不上"这类问题，不可写恰好消除了风险。
-* **你不想装工具链。** 那几个方案都要 Visual Studio 编译 C++ 插件，多半还要 Node.js，
-  或者用 FastMCP 这类需要 `pip install` 的依赖。本插件零编译、零第三方依赖。
-* **你希望编辑器没开时也能问。** 主力读取走本地 T3D 缓存，编辑器开不开都一样。
-* **你在 UE 5.7。**
-
-### 我们不适合什么
-
-* **你想让 AI 直接改蓝图。** 那需要 [ZiggyMar/unreal-mcp](https://github.com/ZiggyMar/unreal-mcp)
-  或 [mirno-ehf/ue5-mcp](https://github.com/mirno-ehf/ue5-mcp)——它们能建节点、连线、改默认值。
-  本插件**没有**这个能力，也不打算有。
-* **你需要覆盖 5.6 或 5.8。** ZiggyMar 明确支持 5.6/5.8；本插件只在 **5.7.4** 上实测过。
-* **你需要大量现成工具。** ZiggyMar 有 101 个工具，本插件 27 个（刻意的：工具定义会进入
-  每一次模型请求）。
-
-关键决策是**不把 Remote Execution 当主路径**：那个开关（`bRemoteExecution`）默认关闭，
-且没有命令行参数、没有 console 命令，只能靠人在编辑器设置里勾。把读取主路径建在一个
-需要人工开关的通道上不划算——`UnrealEditor-Cmd -run=PythonScript` 没有这个前提。
+在线编辑器操作需要开启 Remote Execution，见 [远程执行开关](#编辑器动作需要打开-remote-execution)。
 
 ---
 
@@ -87,7 +43,7 @@
 
 ### 1. 把插件放进项目
 
-把整个 `ComboMCP` 文件夹复制到：
+从 Release 下载源码并解压，把包含 `ComboMCP.uplugin` 的那层目录改名为 `ComboMCP`，放到：
 
 ```
 <你的UE项目>/Plugins/ComboMCP/
@@ -96,9 +52,9 @@
 不需要修改 `.uproject`——`.uplugin` 里 `EnabledByDefault: true` 会自行生效。
 插件目录结构固定为 `<项目>/Plugins/ComboMCP`，代码据此反推项目根，因此**换项目只需复制**。
 
-### 2. 重启编辑器
+### 2. 编译模块并重启编辑器
 
-插件只在**启动时**加载。重启后在 **Edit → Plugins** 里应能看到 **Combo Blueprint MCP**，
+源码安装先构建项目的 Development Editor 目标。安装匹配的二进制后，重启在 **Edit → Plugins** 里应能看到 **Combo Blueprint MCP**，
 菜单出现在 **Tools → ComboMCP**。
 
 `.uplugin` 里的一行依赖声明顺带解决了一件事：
@@ -151,7 +107,19 @@ DeepSeek Harness 用 Cordis 层挂载，见 [`docs/dsh-setup.md`](docs/dsh-setup
 
 ## 用法
 
-### 工具清单（27 个，其中 4 个需要可选的 KBaseUE）
+### 让 AI 直接编写蓝图
+
+在 UE 中打开目标蓝图和图页，启用 Python Remote Execution，结束 PIE 或模拟。
+下指令时写清楚**资产和图页、从哪里开始改、各分支应该怎么走、改到哪一步交付**。
+例如，先选中要改的入口节点，再发下面这条：
+
+> 用 ComboMCP 在当前图页实现攻击条件。从我选中的 `TryAttack` 事件开始，只有已有的 `bCanAttack`
+> 为 True 时才继续原攻击流程，False 时结束这次执行。修改范围限于这段接线和新增节点，
+> 给新增逻辑加注释「检查攻击条件」。我授权编辑和保存。编译通过并复核连线后保存，告诉我编译和磁盘回读结果。
+
+[更多指令示例与工具步骤](docs/quickstart.md#blueprint_edit)
+
+### 工具清单（28 个，其中 4 个需要可选的 KBaseUE）
 
 工具面刻意精简：工具定义会进入**每一次**模型请求。
 
@@ -320,7 +288,7 @@ if (!InProp->HasAnyPropertyFlags(CPF_Edit | CPF_BlueprintVisible | CPF_Blueprint
 * **需要编辑器正在 Play。** 没有 PIE 时返回 `pie_running: false` 并给出提示——
   这是正常状态，不是错误。
 * **跑在运行时，不是编译期。** 蓝图改了**没保存**也能读到最新行为（读的是内存里的类）。
-* **只读。** 不改运行时状态、不调函数、不 spawn。和其余模块同一条安全边界。
+* **只读。** 从 PIE 实例读取运行时状态。
 
 关于防连点标志的一个实战技巧：**按完键别急着重置**。卡住的状态本身就有信息量——
 `bWeaponBusy` 停在 `true` 说明那次操作的**回调根本没触发**（正常路径会在回调里把它复位），
@@ -359,13 +327,14 @@ if (!InProp->HasAnyPropertyFlags(CPF_Edit | CPF_BlueprintVisible | CPF_Blueprint
 
 ```
 Plugins/ComboMCP/
-├── ComboMCP.uplugin        UE 插件描述（"Modules": [] —— 不含 C++，不编译）
+├── ComboMCP.uplugin        UE 插件描述与模块声明
+├── Source/ComboMCPEditor/  K2 图表编辑、事务与排版的 C++ 编辑器模块
 ├── Content/Python/         UE 插件的 Python 约定目录，引擎自动挂进 sys.path
 │   ├── init_unreal.py      启动钩子：写加载证据 + 注册菜单
 │   └── combomcp_editor.py  Tools → ComboMCP 菜单
 ├── start_editor.cmd        启动编辑器（不加任何特殊参数）
 ├── check.cmd               一键自检（前两步不需要编辑器）
-├── ue/                     编辑器内执行的只读脚本（由 bridge 打包送入）
+├── ue/                     编辑器内执行的读取与基础编辑器动作脚本
 │   ├── t3d.py              【纯数据】T3D 文本 -> IR 解析器
 │   ├── graph_ir.py         【纯数据】IR 定义 + 执行流遍历 + DSL 渲染
 │   ├── montage_t3d.py      【纯数据】Montage 时间轴与窗口诊断
@@ -540,12 +509,13 @@ Remote Execution 通道。该通道**默认关闭**：
 **读取类工具只读。** 不写入、不编译、不保存、不创建资产。T3D 导出走
 `ObjectExporterT3D`，是纯序列化；commandlet 只调用 `unreal.load_asset()` 与导出器。
 
-**写操作只有 7 个，而且默认关闭：**
+**编辑器写操作默认关闭。**
 
 | 写操作 | 说明 |
 |---|---|
 | `editor action=pie sub=start` / `stop` / `simulate` | 进入 / 结束 PIE |
 | `editor action=level sub=load` / `new` / `save` / `add` | 关卡加载 / 新建 / 保存 / 挂子关卡 |
+| `blueprint_edit action=apply` / `save` | 编译当前图的修改 / 保存并回读当前 Blueprint |
 
 开启方式（任选其一）：
 
@@ -555,15 +525,8 @@ Remote Execution 通道。该通道**默认关闭**：
 
 未授权时返回带 `_actions_blocked` 的说明，而不是静默失败。
 
-**两道门，不是一个检查。** MCP 侧（`engine/actions.py`）挡住模型误调；编辑器侧
-（`ue/editor_actions.py::_guard_write`）挡住有人绕过 MCP、直接把命令经 Remote
-Execution 送进编辑器。第二道是必要的——那条通道本身是开放的，只靠外部那层不算数。
-
-**明确不做的事**（不是"暂时没做"，是刻意不做）：
-
-- **不执行任意 console 命令。** 那等于把整个引擎控制台交出去，边界会失控。
-- **不保存任意资产。** 只有显式的 `level sub=save`（保存当前关卡，且需要授权）。
-- **不创建 / 修改 / 删除资产。**
+蓝图写操作还核对项目、当前图页和最新 revision。执行 `apply` 时，节点、连线、局部布局和注释进入同一个编辑器撤销事务。
+`save` 保存当前 Blueprint 包，随后启动 commandlet 回读磁盘并核对节点 GUID、坐标、注释标题和连线。
 
 ### 怎么核对"读取真的没写东西"
 

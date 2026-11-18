@@ -30,6 +30,7 @@ import json
 import os
 import re
 import sys
+import tempfile
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -315,6 +316,23 @@ def build_bootstrap(sources, version, command, args, save_to=None, cache_dir=Non
     )
 
 
+_BLUEPRINT_COMMAND = '''\
+from pathlib import Path
+import json
+import unreal
+
+_library = getattr(unreal, "ComboMCPBlueprintEditorLibrary", None)
+if _library is None:
+    _result = json.dumps({{"error": "当前编辑器尚未加载 ComboMCPEditor，请重开编辑器。"}})
+else:
+    _result = _library.run_graph_command(Path({request!r}).read_text(encoding="utf-8"))
+Path({response!r}).write_text(_result, encoding="utf-8")
+print("__COMBOMCP_BEGIN__")
+print(json.dumps({{"__saved_to__": {response!r}}}))
+print("__COMBOMCP_END__")
+'''
+
+
 # ====================================================================== 桥接
 
 
@@ -426,41 +444,28 @@ class UEBridge(object):
         try:
             session.start()
 
+            project = project_file_path()
+            wanted_dir = os.path.normcase(os.path.realpath(os.path.dirname(project))) if project else ""
+            wanted_name = _project_stem()
             deadline = time.time() + self.discover_timeout
             nodes = []
+            exact = None
             while time.time() < deadline:
                 nodes = session.remote_nodes
-                if nodes:
+                exact = next((node for node in nodes
+                              if wanted_dir and (root := node.get("project_root") or node.get("project_dir"))
+                              and os.path.normcase(os.path.realpath(root)) == wanted_dir), None)
+                if exact or (nodes and not wanted_dir):
                     break
                 time.sleep(0.25)
 
             if not nodes:
                 raise BridgeError(_NO_EDITOR_HINT)
 
-            # 优先选择打开了本项目的那一个。项目名从磁盘上的 .uproject 推导而不是
-            # 写死——这样整个插件目录可以原样拷到别的项目里继续用。
-            #
-            # 比较顺序：先按项目**完整路径**（最准，同名项目也不会认错），
-            # 再看项目名，最后才退回 nodes[0]。同机同时开 5.6 与 5.7 两个编辑器时，
-            # 只比项目名会在两个项目名相近时选错实例。
-            chosen = nodes[0]
-            wanted = _project_stem()
-            wanted_dir = ""
-            proj_file = project_file_path()
-            if proj_file:
-                wanted_dir = os.path.normcase(os.path.dirname(proj_file))
-            if wanted:
-                for node in nodes:
-                    node_dir = os.path.normcase(str(node.get("project_dir") or ""))
-                    if wanted_dir and node_dir and \
-                            node_dir.replace("/", os.sep).rstrip(os.sep) == wanted_dir:
-                        chosen = node
-                        break
-                else:
-                    for node in nodes:
-                        if wanted.lower() in str(node.get("project_name", "")).lower():
-                            chosen = node
-                            break
+            # 远程节点异步响应，等待本项目按完整路径出现。旧读取调用保留按名回退。
+            chosen = exact or next((node for node in nodes
+                                    if wanted_name and wanted_name.casefold() ==
+                                    str(node.get("project_name", "")).casefold()), nodes[0])
 
             self._node_info = dict(chosen)
             self._node_id = chosen.get("node_id")
@@ -507,9 +512,22 @@ class UEBridge(object):
         except BridgeError as exc:
             return {"error": str(exc), "_bridge": "disconnected"}
 
-        sources, fingerprint = self._load_sources()
         args = args or {}
+        if command == "blueprint_edit":
+            # Native editing shares this project's filesystem. Keep Remote Execution
+            # packets small and use separate files for each request and response.
+            os.makedirs(CACHE_DIR, exist_ok=True)
+            with tempfile.TemporaryDirectory(prefix="graph_", dir=CACHE_DIR) as workspace:
+                request = os.path.join(workspace, "request.json")
+                response = os.path.join(workspace, "response.json")
+                with open(request, "w", encoding="utf-8") as handle:
+                    json.dump(args["request"], handle, ensure_ascii=False)
+                code = _BLUEPRINT_COMMAND.format(request=request, response=response)
+                result = self._run(command, args, code, retry)
+                result.pop("_from_cache_file", None)
+                return result
 
+        sources, fingerprint = self._load_sources()
         save_to = None
         if command in ("build_index", "project_overview", "list_assets"):
             os.makedirs(CACHE_DIR, exist_ok=True)
@@ -517,17 +535,28 @@ class UEBridge(object):
 
         code = build_bootstrap(sources, fingerprint, command, args,
                                save_to=save_to, cache_dir=CACHE_DIR)
+        return self._run(command, args, code, retry)
 
+    def _run(self, command, args, code, retry):
         mod = self._re_mod
         started = time.time()
+        connection = getattr(self._session, "_command_connection", None)
+        sock = getattr(connection, "_command_channel_socket", None) if command == "blueprint_edit" else None
         try:
-            raw = self._session.run_command(
-                code, unattended=True, exec_mode=mod.MODE_EXEC_FILE)
+            if sock is not None:
+                previous_timeout = sock.gettimeout()
+                sock.settimeout(60)
+            try:
+                raw = self._session.run_command(
+                    code, unattended=True, exec_mode=mod.MODE_EXEC_FILE)
+            finally:
+                if sock is not None:
+                    sock.settimeout(previous_timeout)
         except Exception as exc:
             self._failures += 1
+            self.close()
             if retry:
                 self._log("command transport failed (%s), reconnecting" % exc)
-                self.close()
                 return self.call(command, args, retry=False)
             return {"error": "remote execution failed: %s" % exc,
                     "_bridge": "transport_error"}

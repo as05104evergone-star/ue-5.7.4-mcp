@@ -26,7 +26,7 @@ from engine import logs as logs_mod                 # noqa: E402
 from engine import offline                          # noqa: E402
 from engine import fx as fx_mod                     # noqa: E402
 from engine import search as index_search           # noqa: E402
-from engine.bridge import UEBridge, BridgeError     # noqa: E402
+from engine.bridge import UEBridge, BridgeError, project_file_path  # noqa: E402
 
 
 # ====================================================================== 桥接单例
@@ -553,6 +553,7 @@ _HELP_ALIASES = {
     "level": ("关卡", "地图", "map", "子关卡", "level"),
     "logs": ("日志", "报错", "log", "output"),
     "remoteexec": ("远程执行", "通道", "连不上", "引擎", "版本", "5.6", "5.7"),
+    "blueprint_edit": ("蓝图编辑", "建节点", "接线", "排线", "注释", "撤销"),
     "actions": ("写操作", "权限", "安全", "开关", "授权", "能不能改", "只读"),
     "readorder": ("读什么", "先读", "工具", "清单", "asset", "顺序"),
     "troubleshoot": ("排查", "没生效", "读不到", "空", "不对"),
@@ -697,6 +698,38 @@ def t_editor(params):
         "_actions_allowed": True,
     }
     return _call("editor_action", payload)
+
+
+def t_blueprint_edit(params):
+    action = params.get("action")
+    if action not in ("inspect", "apply", "review", "save"):
+        return {"error": "action 必须是 inspect、apply、review 或 save。"}
+    write = action in ("apply", "save")
+    allowed, blocked = actions_mod.check(write, confirm=params.get("confirm") is True)
+    if not allowed:
+        return blocked
+    project = project_file_path()
+    if not project:
+        return {"error": "找不到 ComboMCP 所属项目的 .uproject。"}
+
+    fields = ("asset_path", "graph", "revision", "nodes", "connect", "disconnect",
+              "defaults", "moves", "arrange", "comments", "route_data", "scope",
+              "focus", "open_graph", "offset", "limit")
+    request = {key: params[key] for key in fields if key in params}
+    request.update(action=action, project_file=project, authorized=write)
+    result = get_bridge().call("blueprint_edit", {"request": request}, retry=not write)
+    if action == "save" and result.get("saved"):
+        asset = offline.normalize_asset_path(result["asset_path"])
+        manifest = result.pop("saved_graph_manifest", None)
+        if manifest is None:
+            result["readback"] = {"ok": False, "error": "编辑器未返回保存清单，请重开编辑器加载最新版模块。"}
+            return result
+        sync = collector_mod.collect([asset], force=True, timeout=120)
+        if not sync.get("exported"):
+            result["readback"] = {"ok": False, "collection": sync}
+        else:
+            result["readback"] = offline.verify_saved_graph(asset, result["graph_id"], manifest)
+    return result
 
 
 def t_help_topics():
@@ -908,7 +941,102 @@ def t_interface_check(params):
 # ====================================================================== 工具定义
 
 
+_GRAPH_ID = {"type": "string", "description": "inspect 返回的节点 GUID，或本批新增节点的 $别名"}
+_XY = {"type": "integer", "minimum": -1000000, "maximum": 1000000}
+_LINKS = {
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "from": _GRAPH_ID, "to": _GRAPH_ID,
+            "out": {"type": "string", "description": "输出 pin GUID 或精确内部名"},
+            "in": {"type": "string", "description": "输入 pin GUID 或精确内部名"},
+        },
+        "required": ["from", "out", "to", "in"],
+    },
+}
+
 _TOOLS = [
+    {
+        "name": "blueprint_edit",
+        "description": (
+            "编辑当前 UE 蓝图中的 K2 图。inspect 读实时节点、坐标、引脚和选区，"
+            "也可打开参考图后读排版样板。apply 在一个撤销事务内建节点、改线、"
+            "局部排版、加注释并编译。review 查局部重叠、白线回折和疑似遮挡，可定位画布。"
+            "看完画布后用 save 保存当前 Blueprint 并从磁盘重采 T3D。"
+            "apply/save 传最新的 asset_path、graph、revision。写操作须由客户端授权，"
+            "每次调用传 confirm=true，或由服务环境启用 COMBO_ALLOW_ACTIONS=1。"
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "action": {"type": "string", "enum": ["inspect", "apply", "review", "save"]},
+                "asset_path": {"type": "string", "description": "已打开的 Blueprint 对象路径"},
+                "graph": {"type": "string", "description": "目标 Blueprint 当前图页的内部名"},
+                "revision": {"type": "string", "description": "该图的最新 revision"},
+                "confirm": {"type": "boolean", "description": "单次授权改图或保存"},
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {"type": "string", "description": "以 $ 开头的批内别名"},
+                            "kind": {"type": "string", "enum": [
+                                "call", "get", "set", "branch", "sequence", "macro", "cast", "reroute",
+                            ]},
+                            "owner": {"type": "string", "description": "类路径或宏库 Blueprint 路径，省略表示当前类"},
+                            "member": {"type": "string", "description": "函数、变量或宏的内部名"},
+                            "local": {"type": "boolean", "description": "函数图中的已有局部变量"},
+                            "x": _XY, "y": _XY,
+                        },
+                        "required": ["id", "kind"],
+                    },
+                },
+                "connect": _LINKS,
+                "disconnect": _LINKS,
+                "defaults": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "node": _GRAPH_ID, "pin": {"type": "string"},
+                            "value": {"type": "string"}, "object": {"type": "string"},
+                        },
+                        "required": ["node", "pin"],
+                    },
+                },
+                "moves": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {"node": _GRAPH_ID, "x": _XY, "y": _XY},
+                        "required": ["node", "x", "y"],
+                    },
+                },
+                "arrange": {"type": "array", "items": _GRAPH_ID,
+                            "description": "显式允许移动的既有节点。无坐标的新节点自动参与排版。"},
+                "comments": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "title": {"type": "string"},
+                            "nodes": {"type": "array", "items": _GRAPH_ID},
+                        },
+                        "required": ["title", "nodes"],
+                    },
+                },
+                "route_data": {"type": "boolean", "description": "给本批长距离数据分发放重路由"},
+                "scope": {"type": "array", "items": _GRAPH_ID, "description": "查看这些节点，局部核对用"},
+                "focus": {"type": "string", "description": "review 时在画布上定位到该节点 GUID"},
+                "open_graph": {"type": "boolean", "description": "inspect/review 打开已打开蓝图中的指定图页"},
+                "offset": {"type": "integer", "minimum": 0, "description": "inspect 节点分页偏移"},
+                "limit": {"type": "integer", "minimum": 1, "maximum": 100, "default": 30},
+            },
+            "required": ["action"],
+        },
+        "handler": t_blueprint_edit,
+    },
     {
         "name": "status",
         "description": (

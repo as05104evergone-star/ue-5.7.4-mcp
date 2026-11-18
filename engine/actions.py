@@ -67,6 +67,7 @@ def check(is_write, confirm=False):
         "what_counts_as_write": [
             "pie sub=start / stop / simulate",
             "level sub=load / new / save / add",
+            "blueprint_edit action=apply / save",
         ],
         "how_to_allow": [
             "长期生效：设环境变量 COMBO_ALLOW_ACTIONS=1，然后重启 MCP 客户端"
@@ -75,8 +76,8 @@ def check(is_write, confirm=False):
         ],
         "not_allowed_at_all": [
             "执行任意 console 命令",
-            "保存任意资产（只有显式的 level sub=save 保存当前关卡）",
-            "创建 / 修改 / 删除资产",
+            "批量保存资产",
+            "创建 / 删除资产",
         ],
         "note": "读取类工具不受影响，任何时候都能用。",
     }
@@ -95,5 +96,6 @@ def describe():
         "note": ("写操作默认关闭。要打开：设 COMBO_ALLOW_ACTIONS=1 并重启 MCP 客户端，"
                  "或在单次调用里传 confirm=true。"),
         "affected": ["editor action=pie sub=start|stop|simulate",
-                     "editor action=level sub=load|new|save|add"],
+                     "editor action=level sub=load|new|save|add",
+                     "blueprint_edit action=apply|save"],
     }

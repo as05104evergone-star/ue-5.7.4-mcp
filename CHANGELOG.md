@@ -2,6 +2,17 @@
 
 本项目遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.4.0] — 2026-11-18
+
+- 蓝图图表开放授权写入。AI 可以根据指定的目标、行为和修改范围，用 `blueprint_edit` 在已打开的 K2 图页内自主编写逻辑。
+- 加入 `ComboMCPEditor` 编辑器模块。`inspect → apply → review → save` 覆盖实时读图、建节点、改线、局部排版、编译复核和保存回读。`apply`、`save` 分别需要授权。
+- 节点、连线、排版和中文注释进入同一 UE 撤销事务。`apply` 返回编译诊断，`review` 可定位画布并检查重叠和遮挡。
+- 保存后从磁盘重采 T3D，核对图节点、坐标、连线和注释。写入前匹配项目路径、当前图页与 revision。
+- [快速上手](docs/quickstart.md#blueprint-edit-prompts) 增加只检查、直接改图并保存、改图编译后等待复核的指令示例。
+- 自 v1.3.0 发布后，增加 `fx_notify_map`、`fx_mounts`、`fx_solve_offset`，用于定位动画特效通知、比较挂点并求解偏移。
+- UE 5.7.4 隔离验证通过建节点、接线、排版、一次撤销、编译失败回滚和磁盘回读。回读核对了 13 个节点、10 条连线、节点坐标和注释标题。
+- UE 5.7.4 和 UE 5.6.1 的 Win64 Development Editor 构建通过。7 套离线测试共通过 382 项断言。
+
 ## [1.3.0] — 2026-10-14
 
 三件事：**读取范围不再限于蓝图与动画**、**能做基础操作**、**UE 5.6 实机验证并适配**。
@@ -244,6 +255,7 @@
 3. `MemberParent` 是**完整对象路径**（`"/Script/CoreUObject.Class'/Script/Engine.Actor'"`），
    直接取会得到 `Class` 而不是 `Actor`。
 
+[1.4.0]: https://github.com/as05104evergone-star/ue-5.7.4-mcp/releases/tag/v1.4.0
 [1.3.0]: https://github.com/as05104evergone-star/ue-5.7.4-mcp/releases/tag/v1.3.0
 [1.2.0]: https://github.com/as05104evergone-star/ue-5.7.4-mcp/releases/tag/v1.2.0
 [1.1.0]: https://github.com/as05104evergone-star/ue-5.7.4-mcp/releases/tag/v1.1.0

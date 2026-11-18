@@ -45,7 +45,7 @@ if ROOT not in sys.path:
 from mcpserver import tools as tool_layer  # noqa: E402
 
 SERVER_NAME = "combomcp"
-SERVER_VERSION = "1.2.0"
+SERVER_VERSION = "1.4.0"
 
 # 支持的协议版本，新的在前
 SUPPORTED_PROTOCOLS = ("2025-06-18", "2025-03-26", "2024-11-05")
@@ -55,8 +55,7 @@ DEFAULT_PROTOCOL = "2024-11-05"
 MAX_TEXT_CHARS = 220_000
 
 INSTRUCTIONS = """\
-这是 ComboMCP：一个**只读**的 Unreal Engine 蓝图与动画资产读取服务，专门服务于
-战斗连招系统的调试与答疑。它绝不修改任何资产。
+这是 ComboMCP，提供 Unreal Engine 蓝图与动画资产读取、战斗连招诊断和实时蓝图编辑。
 
 ## 它连接到哪里（两条路径，互不依赖）
 它**不需要编辑器一直开着**，也不需要在编辑器里勾选任何选项：
@@ -70,8 +69,7 @@ INSTRUCTIONS = """\
    才会用到。它走引擎的 Python Remote Execution 通道，需要编辑器在运行；
    该通道默认关闭，没开也不影响上面那条主力路径。
 
-唯一读不到的情况：在编辑器里改了蓝图**但还没保存**——缓存读的是磁盘上的
-`.uasset`，保存后再 `sync` 一次即可。
+缓存读磁盘上的 `.uasset`。蓝图尚未保存时，用 `blueprint_edit action=inspect` 读取已打开图页。
 
 ## 推荐的读取顺序（由粗到细，避免一次拉爆上下文）
 1. `status` —— 确认通道与索引状态。任何连接类报错先调它。
@@ -117,7 +115,9 @@ INSTRUCTIONS = """\
   读不到——这不代表资产有问题，用 `reflect` 可以看引擎实际暴露了什么。
 * 输出里的 `findings` 条目带 `severity` / `evidence` / `hint`。`hint` 是**修改方向的
   建议**，不是结论；请结合证据和 `flow` 读出的真实控制流自行判断。
-* 本服务不写入、不编译、不保存。若问题需要改动资产，请把修改方案讲清楚交给用户。
+* 用户明确要求直接编写蓝图时，用 `blueprint_edit` 读取目标图页，在指定范围内选节点、接线并编译。
+  顺序是 inspect → apply → review；用户要求保存时再用 save 从磁盘回读。仅要求检查时使用读取动作。
+  apply 和 save 各需要目标图的最新 revision 和写操作授权。
 """
 
 

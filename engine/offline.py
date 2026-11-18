@@ -226,6 +226,49 @@ def graph_overview(asset_path, graph_name=None):
     }
 
 
+def verify_saved_graph(asset_path, graph_id, manifest):
+    """Compare saved node GUIDs, positions, comment titles and outgoing links."""
+    source = read_text(asset_path)
+    if source is None:
+        return {"ok": False, "error": "没有新导出的 T3D。"}
+    pending = list(pure.t3d().parse(source))
+    while pending:
+        entry = pending.pop()
+        if str(entry.props.get("GraphGuid", "")).upper() == graph_id:
+            break
+        pending.extend(entry.children)
+    else:
+        return {"ok": False, "error": "磁盘导出中找不到已保存的图 GUID。"}
+
+    saved_nodes = {node.name: node for node in entry.children if node.props.get("NodeGuid")}
+    guids = {name: str(node.props["NodeGuid"]).upper() for name, node in saved_nodes.items()}
+    pin_names = {
+        (name, pin["attrs"].get("PinId", "").upper()): pin["attrs"].get("PinName", "")
+        for name, node in saved_nodes.items() for pin in node.pins
+    }
+    actual = {}
+    for name, node in saved_nodes.items():
+        links = []
+        for pin in node.pins:
+            if pin["attrs"].get("Direction") != "EGPD_Output":
+                continue
+            for target, target_pin in pin["linked"]:
+                links.append("|".join((pin["attrs"]["PinName"], guids.get(target, "?"),
+                                       pin_names.get((target, target_pin.upper()), "?"))))
+        row = {"id": guids[name], "x": int(node.props.get("NodePosX", 0)),
+               "y": int(node.props.get("NodePosY", 0)), "links": sorted(links)}
+        if node.cls == "EdGraphNode_Comment":
+            row["comment"] = node.props.get("NodeComment", "")
+        actual[row["id"]] = row
+
+    expected = {row["id"]: {**row, "links": sorted(row["links"])} for row in manifest}
+    differences = sorted(key for key in actual.keys() | expected.keys()
+                         if actual.get(key) != expected.get(key))
+    return {"ok": not differences, "source": "saved-package-t3d",
+            "node_count": len(actual), "connection_count": sum(len(node["links"]) for node in actual.values()),
+            "mismatched_node_ids": differences[:30]}
+
+
 def _dominant(stats):
     forms = dict((k, v) for k, v in stats.items() if not k.startswith("_"))
     if not forms:
