@@ -6,6 +6,7 @@
 
 - 项目展示名更新为 **Blueprint Agent Toolkit for Unreal Engine**，仓库名更新为 `unreal-blueprint-agent-toolkit`。安装目录使用 `Plugins/ComboMCP`，兼容已有 MCP 配置。
 - 重写中英文 README，按蓝图编写、资产检查、连招和特效诊断、PIE 操作与引擎查证介绍现有工具和工作流。
+- 添加 [Codex 接入指南](docs/codex-setup.md)，覆盖桌面端、CLI、`config.toml` 与工具调用验证。
 
 ## [1.4.0] — 2026-11-18
 

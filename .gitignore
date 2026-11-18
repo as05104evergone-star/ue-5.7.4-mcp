@@ -19,6 +19,7 @@ cache/
 # 但 quickstart.md 必须进：它是 `help` 工具**运行时的数据源**，不是笔记。
 # 少了它，help 会返回「手册文件不存在」——这是功能，不是文档。
 docs/*.md
+!docs/codex-setup.md
 !docs/dsh-setup.md
 !docs/quickstart.md
 

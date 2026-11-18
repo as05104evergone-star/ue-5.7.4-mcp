@@ -21,6 +21,8 @@
 
 ### 接进 MCP 客户端
 
+[Codex 桌面端、CLI 与 `config.toml` 接入步骤](codex-setup.md) · [DeepSeek Harness 接入](dsh-setup.md)
+
 ```json
 {
   "mcpServers": {

@@ -70,7 +70,7 @@
 }
 ```
 
-[DeepSeek Harness 配置](docs/dsh-setup.md) · [安装步骤](docs/quickstart.md#install) · [Remote Execution 设置](docs/quickstart.md#remoteexec) · [Windows 自检脚本](check.cmd)
+[Codex 接入](docs/codex-setup.md) · [DeepSeek Harness 配置](docs/dsh-setup.md) · [安装步骤](docs/quickstart.md#install) · [Remote Execution 设置](docs/quickstart.md#remoteexec) · [Windows 自检脚本](check.cmd)
 
 ## 离线读取与实时操作
 
@@ -99,13 +99,15 @@
 | **UE 5.6.1 · Windows** | Win64 Development Editor 模块构建通过。读取与基础编辑器动作有 v1.3 实测记录 |
 | UE 5.0–5.5 / Linux / macOS | 当前版本待验证 |
 | UE 4.x | 不支持 |
-| DeepSeek Harness | MCP 接入已实测。其他客户端可按标准 stdio 配置接入 |
+| Codex | 已确认本机 Codex 通过 stdio 加载 `combo`，并成功调用 `help` |
+| DeepSeek Harness | MCP 接入已实测 |
 
 插件优先按项目 `.uproject` 的 `EngineAssociation` 找引擎。`status` 会返回解析到的引擎路径和版本，必要时可以用 `COMBO_UE_ENGINE` 指定引擎根目录。[更新与验证记录](CHANGELOG.md)
 
 ## 文档和源码
 
 - [快速上手与故障排查](docs/quickstart.md)
+- [Codex 桌面端与 CLI 接入](docs/codex-setup.md)
 - [DeepSeek Harness 接入](docs/dsh-setup.md)
 - [UE 5.7 知识库 Skill](skills/ue57-knowledge-base/SKILL.md)
 - [MCP 服务和工具定义](mcpserver) · [UE 编辑器模块](Source/ComboMCPEditor) · [现有测试与诊断工具](tools)

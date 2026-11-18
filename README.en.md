@@ -70,7 +70,7 @@ Graph editing covers existing K2 graphs. Create new Blueprint assets, member dec
 }
 ```
 
-[DeepSeek Harness setup](docs/dsh-setup.md) · [Installation guide](docs/quickstart.md#install) · [Remote Execution setup](docs/quickstart.md#remoteexec) · [Windows setup check](check.cmd)
+[Codex setup](docs/codex-setup.md#english) · [DeepSeek Harness setup](docs/dsh-setup.md) · [Installation guide](docs/quickstart.md#install) · [Remote Execution setup](docs/quickstart.md#remoteexec) · [Windows setup check](check.cmd)
 
 ## Offline reads and live editor operations
 
@@ -99,13 +99,15 @@ Graph editing covers existing K2 graphs. Create new Blueprint assets, member dec
 | **UE 5.6.1 · Windows** | Win64 Development Editor module builds. Asset reads and basic editor actions were verified in v1.3 |
 | UE 5.0–5.5 / Linux / macOS | Unverified for the current version |
 | UE 4.x | Unsupported |
-| DeepSeek Harness | MCP connection verified. Other clients can use the standard stdio configuration |
+| Codex | Verified that local Codex loads `combo` over stdio and can call `help` |
+| DeepSeek Harness | MCP connection verified |
 
 The toolkit selects the engine from the project's `.uproject` `EngineAssociation`. Run `status` to check the engine path and version. Set `COMBO_UE_ENGINE` if you need to specify the engine root. [Version history and verification](CHANGELOG.md)
 
 ## Documentation and source
 
 - [Quickstart and troubleshooting](docs/quickstart.md)
+- [Codex desktop and CLI setup](docs/codex-setup.md#english)
 - [DeepSeek Harness setup](docs/dsh-setup.md)
 - [UE 5.7 knowledge-base Skill](skills/ue57-knowledge-base/SKILL.md)
 - [MCP server and tools](mcpserver) · [UE Editor module](Source/ComboMCPEditor) · [Tests and diagnostics](tools)
