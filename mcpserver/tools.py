@@ -965,7 +965,8 @@ _TOOLS = [
             "局部排版、加注释并编译。review 查局部重叠、白线回折和疑似遮挡，可定位画布。"
             "看完画布后用 save 保存当前 Blueprint 并从磁盘重采 T3D。"
             "apply/save 传最新的 asset_path、graph、revision。写操作须由客户端授权，"
-            "每次调用传 confirm=true，或由服务环境启用 COMBO_ALLOW_ACTIONS=1。"
+            "每次调用传 confirm=true，或由服务环境启用 COMBO_ALLOW_ACTIONS=1。\n"
+            + actions_mod.AGENT_CLEANUP_RULE
         ),
         "inputSchema": {
             "type": "object",
@@ -1468,7 +1469,8 @@ _TOOLS = [
             "logs 读的是磁盘上的 <项目>/Saved/Logs/*.log，不需要编辑器在运行；"
             "pie/level/actor 需要编辑器开着并且打开了 Remote Execution"
             "（该开关默认关闭，见 help topic=remoteexec）。"
-            "不执行任意 console 命令，也不保存任意资产。"),
+            "不执行任意 console 命令，也不保存任意资产。\n"
+            + actions_mod.AGENT_CLEANUP_RULE),
         "inputSchema": {
             "type": "object",
             "properties": {

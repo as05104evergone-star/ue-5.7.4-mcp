@@ -39,6 +39,11 @@ _TRUTHY = ("1", "true", "yes", "on", "y")
 # 名字里带 write 更直观，两条都认不会造成歧义。
 _ENV_KEYS = ("COMBO_ALLOW_ACTIONS", "COMBO_ALLOW_WRITE")
 
+AGENT_CLEANUP_RULE = (
+    "每次完成写入任务前，清理本次和上次由 Agent 为验证生成、已无用途的临时脚本、"
+    "离线测试产物、无头测试案例及其临时工程。保留已有测试、用户文件和明确要求交付的验证材料。"
+)
+
 
 def actions_allowed():
     """环境变量是否放行写操作。"""

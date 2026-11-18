@@ -42,6 +42,7 @@ ROOT = os.path.dirname(HERE)
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+from engine.actions import AGENT_CLEANUP_RULE  # noqa: E402
 from mcpserver import tools as tool_layer  # noqa: E402
 
 SERVER_NAME = "combomcp"
@@ -118,7 +119,7 @@ INSTRUCTIONS = """\
 * 用户明确要求直接编写蓝图时，用 `blueprint_edit` 读取目标图页，在指定范围内选节点、接线并编译。
   顺序是 inspect → apply → review；用户要求保存时再用 save 从磁盘回读。仅要求检查时使用读取动作。
   apply 和 save 各需要目标图的最新 revision 和写操作授权。
-"""
+""" + "* " + AGENT_CLEANUP_RULE + "\n"
 
 
 # ====================================================================== 输出
